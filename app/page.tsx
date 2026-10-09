@@ -80,6 +80,7 @@ export default function Home() {
   // 定番プロダクト背景透過サムネイル
   const essentialCategories = [
     { name: 'Tシャツ', img: '/images/products/thum-tshirt.png', fallback: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&auto=format&fit=crop&q=80' },
+    { name: 'ジャケット', img: '/images/products/thum-jacket.png', fallback: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&auto=format&fit=crop&q=80' },
     { name: 'パーカー', img: '/images/products/thum-hoodie.png', fallback: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=300&auto=format&fit=crop&q=80' },
     { name: 'セーター', img: '/images/products/thum-sweater.png', fallback: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300&auto=format&fit=crop&q=80' },
     { name: 'ジーンズ', img: '/images/products/thum-jeans.png', fallback: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300&auto=format&fit=crop&q=80' },
@@ -140,9 +141,9 @@ export default function Home() {
       <main className="w-full">
         
         {/* =========================================================
-           1. Main Hero section
+           1. Main Hero section (Headerと同じ max-w-[1600px] + px にAlign)
            ========================================================= */}
-        <section className="relative w-full h-[calc(100vh-120px)] min-h-[500px] bg-black overflow-hidden flex items-end p-24 md:p-40">
+        <section className="relative w-full h-screen min-h-[500px] bg-black overflow-hidden flex items-end pb-32 md:pb-48">
           <video 
             autoPlay 
             loop 
@@ -156,45 +157,49 @@ export default function Home() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-          <div className="relative z-10 text-left text-white max-w-[800px]">
-            <div className="mb-16">
-              <img 
-                src="/images/logo/logo-gap-apc.svg" 
-                alt="GAP × A.P.C." 
-                className="h-36 md:h-52 w-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const parent = e.currentTarget.parentElement;
-                  if (parent && !parent.querySelector('.logo-apc-fallback')) {
-                    const fallback = document.createElement('h1');
-                    fallback.className = 'logo-apc-fallback text-36 md:text-50 font-bold tracking-tight drop-shadow-md';
-                    fallback.innerText = 'GAP × A.P.C.';
-                    parent.appendChild(fallback);
-                  }
-                }}
-              />
-            </div>
+          {/* Headerのインナーと同じ幅・Padding構成 */}
+          <div className="w-full max-w-[1600px] mx-auto px-12 md:px-16 lg:px-24 relative z-10">
+            <div className="text-left text-white max-w-[800px]">
+              <div className="mb-16">
+                <img 
+                  src="/images/logo/logo-gap-apc.svg" 
+                  alt="GAP × A.P.C." 
+                  className="h-36 md:h-52 w-auto object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent && !parent.querySelector('.logo-apc-fallback')) {
+                      const fallback = document.createElement('h1');
+                      fallback.className = 'logo-apc-fallback text-36 md:text-50 font-bold tracking-tight drop-shadow-md';
+                      fallback.innerText = 'GAP × A.P.C.';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
+              </div>
 
-            <p className="text-[20px] font-medium mb-24 opacity-90 drop-shadow leading-snug">
-              ふたつの世界。ひとつのコレクション。エフォートレスなスタイルという共通言語
-            </p>
+              <p className="text-[20px] font-medium mb-24 opacity-90 drop-shadow leading-snug">
+                ふたつの世界。ひとつのコレクション。エフォートレスなスタイルという共通言語
+              </p>
 
-            <div>
-              <a 
-                href="#" 
-                className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-14 px-16 py-6 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
-              >
-                コレクションをチェック
-              </a>
+              <div>
+                <a 
+                  href="#" 
+                  className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-14 px-16 py-6 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
+                >
+                  コレクションをチェック
+                </a>
+              </div>
             </div>
           </div>
         </section>
 
         {/* =========================================================
-           2. Sub Hero section
+           2. Sub Hero section (左右カード内PaddingをHeaderと同一指定)
            ========================================================= */}
         <section className="w-full grid grid-cols-1 md:grid-cols-2">
-          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end p-24 md:p-40">
+          {/* 左カード */}
+          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-12 md:px-16 lg:px-24 pb-24 md:pb-32">
             <video 
               autoPlay 
               loop 
@@ -221,7 +226,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end p-24 md:p-40">
+          {/* 右カード */}
+          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-12 md:px-16 lg:px-24 pb-24 md:pb-32">
             <video 
               autoPlay 
               loop 
@@ -354,12 +360,11 @@ export default function Home() {
         </section>
 
         {/* =========================================================
-           5. SEO & Navigation List Section (上部余白を 100px に調整)
+           5. SEO & Navigation List Section
            ========================================================= */}
         <section className="bg-white pt-[100px] pb-48 md:pb-64">
           <div className="max-w-[1200px] mx-auto px-16 lg:px-24">
             
-            {/* 見出しタイトル ＆ サブテキスト */}
             <div className="text-center mb-20 md:mb-28">
               <h2 className="text-42 md:text-60 font-black tracking-widest text-gap-dark mb-12 uppercase">
                 GAP STYLE
@@ -370,8 +375,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 定番プロダクトサムネイル */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-16 md:gap-24 mb-24 md:mb-32 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-16 md:gap-24 mb-24 md:mb-32 text-center">
               {essentialCategories.map((cat, idx) => (
                 <a 
                   key={idx} 
@@ -395,7 +399,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* 4カラム・テキストリンクナビゲーション */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-24 md:gap-32 border-t border-gap-border pt-32">
               {seoNavigationColumns.map((col, cIdx) => (
                 <div key={cIdx}>
