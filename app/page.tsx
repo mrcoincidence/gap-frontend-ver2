@@ -134,8 +134,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans">
       
-      {/* ヘッダー */}
-      <Header />
+      {/* ヘッダー: Main Home のため透過ヘッダーを有効化 */}
+      <Header isHome={true} />
 
       {/* メインコンテンツ */}
       <main className="w-full">

@@ -16,11 +16,14 @@ import {
   User
 } from 'lucide-react';
 
-export default function Header() {
+interface HeaderProps {
+  isHome?: boolean;
+}
+
+export default function Header({ isHome = false }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // プロモーション Carousel 用コンテンツ
   const announcements = [
     {
       text: "表示価格より2点で30％OFF 3点以上で40％OFF",
@@ -40,7 +43,6 @@ export default function Header() {
   ];
   const [announceIndex, setAnnounceIndex] = useState(0);
 
-  // 3秒ごとに自動スライド・ループ処理
   useEffect(() => {
     const interval = setInterval(() => {
       setAnnounceIndex((prev) => (prev + 1) % announcements.length);
@@ -48,7 +50,6 @@ export default function Header() {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  // スクロール状態の検知
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 20) {
@@ -67,13 +68,12 @@ export default function Header() {
 
   const categories = ['メンズ', 'ウィメンズ', 'キッズ', '小物', 'GapX'];
 
-  // スクロール状態に応じたテキスト・アイコンカラー
-  const navTextColor = isScrolled ? 'text-gap-dark hover:text-gap-navy' : 'text-white hover:opacity-80';
-  const logoFill = isScrolled ? '#000000' : '#ffffff';
+  const isTransparent = isHome && !isScrolled;
+  const navTextColor = !isTransparent ? 'text-gap-dark hover:text-gap-navy' : 'text-white hover:opacity-80';
+  const logoFill = !isTransparent ? '#000000' : '#ffffff';
 
   return (
     <>
-      {/* 左から右へ移動するスライドアニメーション用CSS */}
       <style jsx>{`
         @keyframes slideRight {
           0% {
@@ -90,13 +90,10 @@ export default function Header() {
         }
       `}</style>
 
-      {/* =========================================================
-         1. Top Bar (GAP Navy背景)
-         ========================================================= */}
+      {/* 1. Top Bar */}
       <div className="bg-gap-navy text-white py-2 px-12 md:px-16 lg:px-24 w-full font-sans relative z-50">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center text-11 md:text-12">
           
-          {/* 左側: プロモーションメッセージ ＋ 右矢印（＞） */}
           <div className="flex items-center gap-6 overflow-hidden">
             <div className="relative overflow-hidden h-18 flex items-center">
               <div 
@@ -123,7 +120,6 @@ export default function Header() {
             </button>
           </div>
 
-          {/* 右側: 店舗検索・ヘルプ・ログイン */}
           <div className="hidden lg:flex items-center gap-20 text-white flex-shrink-0">
             <Link href="#" className="flex items-center gap-4 hover:opacity-80 text-white">
               <MapPin size={14} />
@@ -142,12 +138,10 @@ export default function Header() {
         </div>
       </div>
 
-      {/* =========================================================
-         2. Main Bar (Sticky Header: 正確な16px余白とマイナスマージン計算)
-         ========================================================= */}
+      {/* 2. Main Bar: 下部ボーダー(border-b)およびシャドウを完全削除 */}
       <div className={`sticky top-0 w-full z-50 transition-all duration-300 font-sans ${
-        isScrolled 
-          ? 'bg-white py-3 shadow-md border-b border-gap-border mb-0' 
+        !isTransparent 
+          ? 'bg-white pt-[16px] pb-[16px] mb-0' 
           : 'bg-transparent pt-[16px] pb-[16px] -mb-[76px] md:-mb-[86px]'
       }`}>
         <div className="max-w-[1600px] mx-auto px-12 md:px-16 lg:px-24 flex items-center justify-between">
@@ -156,9 +150,7 @@ export default function Header() {
           <div className="flex-shrink-0 flex items-center pr-8 md:pr-24">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="GAP ホーム">
               <svg 
-                className={`transition-all duration-200 w-auto ${
-                  isScrolled ? 'h-[28px] md:h-[32px]' : 'h-[44px] md:h-[54px]'
-                }`} 
+                className="transition-all duration-200 w-auto h-[44px] md:h-[54px]" 
                 viewBox="0 0 104 78" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"
@@ -190,12 +182,12 @@ export default function Header() {
                 type="search" 
                 placeholder="検索" 
                 className={`w-full rounded-full py-4 pl-14 pr-32 text-12 focus:outline-none transition-all ${
-                  isScrolled 
+                  !isTransparent 
                     ? 'bg-gap-gray border border-gap-border-dark text-gap-dark placeholder:text-gap-muted focus:border-gap-navy' 
                     : 'bg-white/20 border border-white/40 text-white placeholder:text-white/80 focus:bg-white/30 focus:border-white'
                 }`}
               />
-              <Search size={15} className={`absolute right-10 ${isScrolled ? 'text-gap-muted' : 'text-white/80'}`} />
+              <Search size={15} className={`absolute right-10 ${!isTransparent ? 'text-gap-muted' : 'text-white/80'}`} />
             </div>
 
             <button className={`md:hidden p-1.5 transition-colors ${navTextColor}`} aria-label="検索">
@@ -225,9 +217,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* =========================================================
-         3. Mobile Hamburger Drawer Menu
-         ========================================================= */}
+      {/* 3. Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-x-0 top-[60px] bottom-0 bg-white z-50 flex flex-col justify-between overflow-y-auto animate-in fade-in duration-200 font-sans">
           <div className="p-20">
