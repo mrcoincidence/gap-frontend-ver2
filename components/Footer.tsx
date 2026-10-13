@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer className="w-full bg-white text-gap-dark pt-16 md:pt-24 pb-16 font-sans overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-16 lg:px-24">
+      <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24">
         
         {/* =========================================================
            1. エリア1 : 2カラム構成
@@ -168,15 +168,21 @@ export default function Footer() {
 
         {/* =========================================================
            3. エリア3 : Copyright ＆ Legal Links
+           モバイル時: リンクを縦並び・左寄せで先に表示し、下にCopyrightを表示
+           PC時(md:): 既存の横並び両端配置
            ========================================================= */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-12 text-11 text-gap-muted text-center md:text-left">
-          <p>©2026 The Gap, Inc. All rights reserved.</p>
+        <div className="pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-16 md:gap-12 text-11 text-gap-muted text-left">
           
-          <div className="flex flex-wrap items-center justify-center gap-12 lg:gap-20">
+          {/* テキストリンク群 (モバイル: 1列に1つずつ縦並び左寄せ、PC: 横並び) */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-10 md:gap-12 lg:gap-20 order-1 md:order-2 w-full md:w-auto">
             <Link href="#" className="hover:underline">利用規約</Link>
             <Link href="#" className="hover:underline">プライバシーポリシー</Link>
             <Link href="#" className="hover:underline">特定商取引法・古物営業法に基づく表示案内</Link>
           </div>
+
+          {/* Copyright (モバイル: リンクの下に配置、PC: 左側に配置) */}
+          <p className="order-2 md:order-1">©2026 The Gap, Inc. All rights reserved.</p>
+
         </div>
 
       </div>

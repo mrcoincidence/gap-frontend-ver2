@@ -91,9 +91,8 @@ export default function Header({ isHome = false }: HeaderProps) {
       `}</style>
 
       {/* 1. Top Bar */}
-      <div className="bg-gap-navy text-white py-2 px-12 md:px-16 lg:px-24 w-full font-sans relative z-50">
+      <div className="bg-gap-navy text-white py-2 px-[24px] lg:px-24 w-full font-sans relative z-50">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center text-11 md:text-12">
-          
           <div className="flex items-center gap-6 overflow-hidden">
             <div className="relative overflow-hidden h-18 flex items-center">
               <div 
@@ -134,23 +133,24 @@ export default function Header({ isHome = false }: HeaderProps) {
               <span>ログイン</span>
             </Link>
           </div>
-
         </div>
       </div>
 
-      {/* 2. Main Bar: 下部ボーダー(border-b)およびシャドウを完全削除 */}
-      <div className={`sticky top-0 w-full z-50 transition-all duration-300 font-sans ${
+      {/* 2. Main Bar: スクロール時にPaddingをpy-[8px]に低減 */}
+      <div className={`sticky top-0 w-full z-50 transition-all duration-200 font-sans ${
         !isTransparent 
-          ? 'bg-white pt-[16px] pb-[16px] mb-0' 
-          : 'bg-transparent pt-[16px] pb-[16px] -mb-[76px] md:-mb-[86px]'
+          ? `bg-white ${isScrolled ? 'py-[8px]' : 'py-[16px]'} mb-0` 
+          : `bg-transparent ${isScrolled ? 'py-[8px] bg-white' : 'py-[16px] -mb-[76px] md:-mb-[86px]'}`
       }`}>
-        <div className="max-w-[1600px] mx-auto px-12 md:px-16 lg:px-24 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24 flex items-center justify-between">
           
-          {/* 左寄せ: GAP ロゴ */}
+          {/* 左寄せ: GAP ロゴ (スクロール時は 32px に縮小) */}
           <div className="flex-shrink-0 flex items-center pr-8 md:pr-24">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="GAP ホーム">
               <svg 
-                className="transition-all duration-200 w-auto h-[44px] md:h-[54px]" 
+                className={`transition-all duration-200 w-auto ${
+                  isScrolled ? 'h-[32px]' : 'h-[44px] md:h-[54px]'
+                }`} 
                 viewBox="0 0 104 78" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"

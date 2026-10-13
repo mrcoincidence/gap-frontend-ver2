@@ -77,7 +77,6 @@ export default function Home() {
     },
   ];
 
-  // 定番プロダクト背景透過サムネイル
   const essentialCategories = [
     { name: 'Tシャツ', img: '/images/products/thum-tshirt.png', fallback: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&auto=format&fit=crop&q=80' },
     { name: 'ジャケット', img: '/images/products/thum-jacket.png', fallback: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300&auto=format&fit=crop&q=80' },
@@ -87,7 +86,6 @@ export default function Home() {
     { name: 'チノパンツ', img: '/images/products/thum-chino.png', fallback: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=300&auto=format&fit=crop&q=80' },
   ];
 
-  // 4カラム・カテゴリーテキストリンク
   const seoNavigationColumns = [
     {
       title: 'ピックアップ',
@@ -133,16 +131,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      
-      {/* ヘッダー: Main Home のため透過ヘッダーを有効化 */}
       <Header isHome={true} />
 
-      {/* メインコンテンツ */}
       <main className="w-full">
-        
-        {/* =========================================================
-           1. Main Hero section (Headerと同じ max-w-[1600px] + px にAlign)
-           ========================================================= */}
+        {/* 1. Main Hero section */}
         <section className="relative w-full h-screen min-h-[500px] bg-black overflow-hidden flex items-end pb-32 md:pb-48">
           <video 
             autoPlay 
@@ -157,8 +149,7 @@ export default function Home() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
-          {/* Headerのインナーと同じ幅・Padding構成 */}
-          <div className="w-full max-w-[1600px] mx-auto px-12 md:px-16 lg:px-24 relative z-10">
+          <div className="w-full max-w-[1600px] mx-auto px-[24px] lg:px-24 relative z-10">
             <div className="text-left text-white max-w-[800px]">
               <div className="mb-16">
                 <img 
@@ -194,12 +185,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================================
-           2. Sub Hero section (左右カード内PaddingをHeaderと同一指定)
-           ========================================================= */}
+        {/* 2. Sub Hero section */}
         <section className="w-full grid grid-cols-1 md:grid-cols-2">
-          {/* 左カード */}
-          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-12 md:px-16 lg:px-24 pb-24 md:pb-32">
+          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-[24px] lg:px-24 pb-24 md:pb-32">
             <video 
               autoPlay 
               loop 
@@ -226,8 +214,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 右カード */}
-          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-12 md:px-16 lg:px-24 pb-24 md:pb-32">
+          <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-[24px] lg:px-24 pb-24 md:pb-32">
             <video 
               autoPlay 
               loop 
@@ -255,14 +242,19 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================================
-           3. Shop now section
-           ========================================================= */}
-        <section className="max-w-[1600px] mx-auto px-16 lg:px-24 py-48 md:py-64">
-          <div className="flex items-center justify-between mb-24">
-            <h2 className="text-24 md:text-28 font-bold text-gap-dark">SHOP NOW</h2>
+        {/* 3. Shop now section */}
+        <section className="max-w-[1600px] mx-auto px-[24px] lg:px-24 py-48 md:py-64">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-24 gap-4 md:gap-0">
+            <div>
+              <h2 className="text-24 md:text-28 font-bold text-gap-dark">SHOP NOW</h2>
+              {/* モバイル時：見出しの下に「全て見る」を配置 */}
+              <a href="#" className="md:hidden text-13 font-bold text-gap-dark hover:text-gap-navy mt-4 inline-block">
+                全て見る →
+              </a>
+            </div>
             
-            <div className="flex items-center gap-16">
+            {/* PC時：見出しの右側に配置（モバイル時は非表示） */}
+            <div className="hidden md:flex items-center gap-16">
               <a href="#" className="text-13 font-bold text-gap-dark hover:text-gap-navy">
                 全て見る →
               </a>
@@ -323,10 +315,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================================
-           4. Promotional Banner section
-           ========================================================= */}
-        <section className="max-w-[1600px] mx-auto px-16 lg:px-24">
+        {/* 4. Promotional Banner section */}
+        <section className="max-w-[1600px] mx-auto px-[24px] lg:px-24">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24">
             {promoBanners.map((banner, index) => (
               <div key={index} className="relative aspect-[2/3] bg-gap-gray overflow-hidden border border-gap-border group cursor-pointer">
@@ -359,12 +349,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* =========================================================
-           5. SEO & Navigation List Section
-           ========================================================= */}
+        {/* 5. SEO & Navigation List Section */}
         <section className="bg-white pt-[100px] pb-48 md:pb-64">
-          <div className="max-w-[1200px] mx-auto px-16 lg:px-24">
-            
+          <div className="max-w-[1200px] mx-auto px-[24px] lg:px-24">
             <div className="text-center mb-20 md:mb-28">
               <h2 className="text-42 md:text-60 font-black tracking-widest text-gap-dark mb-12 uppercase">
                 GAP STYLE
@@ -420,15 +407,11 @@ export default function Home() {
                 </div>
               ))}
             </div>
-
           </div>
         </section>
-
       </main>
 
-      {/* フッター */}
       <Footer />
-
     </div>
   );
 }

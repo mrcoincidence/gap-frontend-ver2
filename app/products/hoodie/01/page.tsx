@@ -96,7 +96,6 @@ const productData = {
   ]
 };
 
-// コーディネート一覧データ
 const coordinateItems = [
   {
     id: 1,
@@ -130,12 +129,10 @@ const coordinateItems = [
   }
 ];
 
-// 完成スタイル（コラージュ）データ：02のitem-04を左下に配置
 const completeTheLookBundles = [
   {
     id: 'bundle-1',
     title: '90s ストリートカジュアル',
-    // 01: 5枚構成（中央、右上、右下、左下、左上）
     items: [
       {
         name: 'ヴィンテージソフト リラックスパーカー (当商品)',
@@ -182,7 +179,6 @@ const completeTheLookBundles = [
   {
     id: 'bundle-2',
     title: 'アーバン スポーツスタイル',
-    // 02: 4枚構成（中央、中央上部、右下、左下）
     items: [
       {
         name: 'ヴィンテージソフト リラックスパーカー (当商品)',
@@ -221,16 +217,7 @@ const completeTheLookBundles = [
   {
     id: 'bundle-3',
     title: 'アイコニック レイヤード',
-    // 03: 3枚構成（中央、左上、右下）
     items: [
-      {
-        name: 'ヴィンテージソフト リラックスパーカー (当商品)',
-        price: '¥9,990',
-        top: '50%',
-        left: '50%',
-        width: '48%',
-        img: '/images/products/hoodie/01/looks/look-03-item-01.png'
-      },
       {
         name: 'アイコニック デニムジャケット',
         price: '¥12,900',
@@ -238,6 +225,14 @@ const completeTheLookBundles = [
         left: '24%',
         width: '34%',
         img: '/images/products/hoodie/01/looks/look-03-item-02.png'
+      },
+      {
+        name: 'ヴィンテージソフト リラックスパーカー (当商品)',
+        price: '¥9,990',
+        top: '50%',
+        left: '50%',
+        width: '48%',
+        img: '/images/products/hoodie/01/looks/look-03-item-01.png'
       },
       {
         name: 'リラックス バギーチノ',
@@ -251,7 +246,6 @@ const completeTheLookBundles = [
   }
 ];
 
-// 他のおすすめ商品データ（全PDP共通・全6アイテム）
 const recommendationProducts = [
   {
     id: 'rec-01',
@@ -311,7 +305,6 @@ export default function ProductDetailPage() {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // カルーセル用 Ref
   const coordScrollRef = useRef<HTMLDivElement>(null);
   const bundleScrollRef = useRef<HTMLDivElement>(null);
   const recomScrollRef = useRef<HTMLDivElement>(null);
@@ -352,16 +345,16 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gap-dark font-sans flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-gap-dark font-sans flex flex-col justify-between overflow-x-clip">
       <Header />
 
-      <main className="max-w-[1600px] mx-auto px-16 lg:px-24 py-16 md:py-24 w-full">
+      <main className="max-w-[1600px] mx-auto px-[24px] lg:px-24 py-16 md:py-24 w-full">
         {/* =========================================================
            1. 商品説明セクション
            ========================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-start">
           
-          {/* 7/12幅：サムネイル ＆ メイン画像エリア (Sticky固定) */}
+          {/* 7/12幅：サムネイル ＆ メイン画像エリア */}
           <div className="lg:col-span-7 lg:sticky lg:top-[100px] lg:h-[calc(100vh-120px)] flex flex-col justify-start">
             <div className="flex flex-col lg:flex-row gap-8 items-start h-full w-full">
               
@@ -387,8 +380,8 @@ export default function ProductDetailPage() {
                 ))}
               </div>
 
-              {/* メイン画像エリア: 上端揃え */}
-              <div className="flex-1 relative h-[65vh] lg:h-full w-full bg-white rounded-sm overflow-hidden flex items-start justify-center group">
+              {/* メイン画像エリア: モバイル時は全幅表示 */}
+              <div className="flex-1 relative h-[65vh] lg:h-full -mx-[24px] lg:mx-0 w-screen max-w-none lg:w-full bg-white rounded-none lg:rounded-sm overflow-hidden flex items-start justify-center group">
                 <img
                   src={currentImages[selectedImageIndex]}
                   alt={productData.name}
@@ -446,7 +439,6 @@ export default function ProductDetailPage() {
 
           {/* 5/12幅：商品情報エリア */}
           <div className="lg:col-span-5 flex flex-col gap-8">
-            {/* カテゴリ ＆ 商品名 */}
             <div>
               <p className="text-13 text-[#999999] mb-4 font-normal tracking-wide">
                 {productData.category}
@@ -456,7 +448,6 @@ export default function ProductDetailPage() {
               </h1>
             </div>
 
-            {/* 価格 */}
             <div className="text-[16px] font-bold text-gap-dark">
               ¥{productData.price.toLocaleString()} <span className="text-12 font-normal text-gap-muted">(税込)</span>
             </div>
@@ -494,7 +485,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* サイズ選択 & 「サイズ確認する」リンク */}
+            {/* サイズ選択 */}
             <div>
               <div className="flex justify-between items-center mb-10 text-13">
                 <span className="font-bold">サイズを選択</span>
@@ -524,7 +515,6 @@ export default function ProductDetailPage() {
                       }`}
                     >
                       <span>{sz}</span>
-                      
                       {!isAvailable && (
                         <svg 
                           className="absolute inset-0 w-full h-full text-gray-300 pointer-events-none" 
@@ -544,11 +534,12 @@ export default function ProductDetailPage() {
             </div>
 
             {/* =========================================================
-               ヴァーチャル試着 UI
+               ヴァーチャル試着 UI (モバイル時はアイコン非表示 ＆ 左右両端揃え)
                ========================================================= */}
             <div className="flex items-center justify-between py-6 my-1">
               <div className="flex items-center gap-10">
-                <div className="flex items-center flex-shrink-0">
+                {/* 丸型アイコン：モバイル時は非表示、PC時のみ表示 (hidden sm:flex) */}
+                <div className="hidden sm:flex items-center flex-shrink-0">
                   <div className="w-[36px] h-[36px] rounded-full border-2 border-gap-navy overflow-hidden bg-white flex items-center justify-center relative z-10">
                     <img 
                       src={currentImages[1] || currentImages[0]} 
@@ -564,14 +555,16 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
+                {/* 左側テキスト */}
                 <span className="text-[14px] text-gray-800 font-normal">
                   似合うか不安ですか？
                 </span>
               </div>
 
+              {/* 右側テキストリンク */}
               <button 
                 type="button"
-                className="font-bold text-[13px] text-gap-dark hover:text-gap-navy flex items-center gap-4 hover:underline transition-colors ml-auto"
+                className="font-bold text-[13px] text-gap-dark hover:text-gap-navy flex items-center gap-4 hover:underline transition-colors whitespace-nowrap"
               >
                 <Sparkles size={16} />
                 <span>ヴァーチャル試着する</span>
@@ -579,12 +572,8 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
-            {/* =========================================================
-               Uniqlo風 カート・数量・お気に入り ＆ 在庫・店舗リンク
-               ========================================================= */}
+            {/* カート・数量・お気に入り ＆ 在庫リンク */}
             <div className="flex flex-col gap-10 mt-2">
-              
-              {/* 上段: [ - 1 + ] カウンター ＋ [ カートに入れる (GAP NAVY) ] */}
               <div className="flex items-center gap-12">
                 <div className="flex items-center justify-between bg-[#f4f4f4] rounded-full px-16 py-10 w-[140px] h-[52px] flex-shrink-0 select-none">
                   <button
@@ -615,7 +604,6 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              {/* 中段: [在庫あり] と [店舗の在庫を確認する] 横並び */}
               <div className="flex items-center justify-between text-[13px] px-4">
                 <span className="text-gray-600">在庫あり</span>
                 <button 
@@ -627,7 +615,6 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              {/* 下段: [シェアボタン] ＋ [♡ お気に入りに追加する] */}
               <div className="flex items-center gap-12">
                 <button
                   aria-label="共有する"
@@ -650,12 +637,8 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* =========================================================
-               アコーディオンエリア (タイトル: 16px)
-               ========================================================= */}
+            {/* アコーディオンエリア */}
             <div className="border-t border-gap-border mt-10 divide-y divide-gap-border">
-              
-              {/* 1. 商品概要 */}
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('overview')} 
@@ -674,7 +657,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* 2. サイズ・フィット感 */}
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('sizeFit')} 
@@ -719,7 +701,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* 3. 素材・お手入れ */}
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('material')} 
@@ -737,7 +718,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* 4. レビュー */}
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('reviews')} 
@@ -771,7 +751,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* 5. 配送・交換・返品について */}
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('shipping')} 
@@ -788,10 +767,8 @@ export default function ProductDetailPage() {
                   </div>
                 )}
               </div>
-
             </div>
           </div>
-
         </div>
 
         {/* =========================================================
@@ -799,7 +776,7 @@ export default function ProductDetailPage() {
            ========================================================= */}
         <section className="mt-32 pt-20 border-t border-gap-border">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-16 mb-20">
-            <div>
+            <div className="w-full md:w-auto">
               <h2 className="text-20 md:text-24 font-bold text-gap-dark">
                 みんなのGAPコーディネートをチェック
               </h2>
@@ -809,14 +786,14 @@ export default function ProductDetailPage() {
               
               <button 
                 type="button"
-                className="mt-12 inline-flex items-center gap-6 px-16 py-8 border border-gap-border-dark rounded-full text-12 font-bold text-gap-dark hover:bg-black hover:text-white transition-colors"
+                className="mt-12 w-full md:w-auto inline-flex items-center justify-center gap-6 px-16 py-8 border border-gap-border-dark rounded-full text-12 font-bold text-gap-dark hover:bg-black hover:text-white transition-colors"
               >
                 <Camera size={16} />
                 <span>写真をアップロード</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-8 self-end md:self-auto">
+            <div className="hidden md:flex items-center gap-8 self-end md:self-auto">
               <button 
                 onClick={() => scrollContainer(coordScrollRef, 'left')}
                 aria-label="前へ" 
@@ -836,12 +813,12 @@ export default function ProductDetailPage() {
 
           <div 
             ref={coordScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory"
+            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {coordinateItems.map((item) => (
               <div 
                 key={item.id} 
-                className="w-[280px] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col"
+                className="w-[72vw] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col"
               >
                 <div className="relative aspect-square bg-gap-gray overflow-hidden rounded-[4px] group">
                   <img
@@ -872,7 +849,7 @@ export default function ProductDetailPage() {
               </div>
             ))}
 
-            <div className="w-[280px] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col">
+            <div className="w-[72vw] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col">
               <div className="aspect-square bg-[#f6f6f6] rounded-[4px] border border-dashed border-gray-300 flex flex-col items-center justify-center p-24 text-center">
                 <p className="text-[14px] md:text-[15px] font-bold text-gap-dark leading-relaxed mb-16">
                   いち早く素敵なコーディネートを<br />シェアしよう
@@ -890,7 +867,7 @@ export default function ProductDetailPage() {
         </section>
 
         {/* =========================================================
-           3. あなただけのGAPスタイルを完成させよう (02の配置を修正)
+           3. あなただけのGAPスタイルを完成させよう
            ========================================================= */}
         <section className="mt-32 pt-20 border-t border-gap-border">
           <div className="flex justify-between items-center mb-20">
@@ -898,7 +875,7 @@ export default function ProductDetailPage() {
               あなただけのGAPスタイルを完成させよう
             </h2>
 
-            <div className="flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8">
               <button 
                 onClick={() => scrollContainer(bundleScrollRef, 'left')}
                 aria-label="前へ" 
@@ -918,15 +895,14 @@ export default function ProductDetailPage() {
 
           <div 
             ref={bundleScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory"
+            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {completeTheLookBundles.map((bundle) => (
               <div 
                 key={bundle.id}
-                className="w-[300px] sm:w-[360px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start"
+                className="w-[78vw] sm:w-[360px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start"
               >
                 <div className="relative aspect-[3/4] bg-[#f1f1f1] rounded-[4px] overflow-hidden group/card select-none">
-                  
                   <div className="absolute inset-0">
                     {bundle.items.map((item, itemIdx) => (
                       <div
@@ -976,7 +952,6 @@ export default function ProductDetailPage() {
                       <span className="hidden sm:inline">コーデ全体を見る</span>
                     </button>
                   </div>
-
                 </div>
 
                 <p className="text-13 font-bold text-gap-dark mt-8 line-clamp-1">
@@ -994,7 +969,7 @@ export default function ProductDetailPage() {
           <div className="flex justify-between items-center mb-20">
             <h2 className="text-20 md:text-24 font-bold text-gap-dark">他のおすすめ</h2>
             
-            <div className="flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8">
               <button 
                 onClick={() => scrollContainer(recomScrollRef, 'left')}
                 aria-label="前へ" 
@@ -1014,12 +989,12 @@ export default function ProductDetailPage() {
 
           <div 
             ref={recomScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory"
+            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {recommendationProducts.map((item) => (
               <div 
                 key={item.id} 
-                className="w-[240px] sm:w-[280px] md:w-[calc(25%-12px)] flex-shrink-0 snap-start flex flex-col"
+                className="w-[58vw] sm:w-[240px] md:w-[calc(25%-12px)] flex-shrink-0 snap-start flex flex-col"
               >
                 <Link href="#" className="group flex flex-col">
                   <div className="aspect-[4/5] bg-white border border-gap-border rounded-[4px] overflow-hidden mb-12 flex items-center justify-center">
