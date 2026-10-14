@@ -3,28 +3,31 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VirtualTryOnModal from '@/components/VirtualTryOnModal';
 import { 
   SlidersHorizontal, 
   ChevronUp, 
   ChevronDown,
   X, 
-  LayoutGrid,
-  Grid3X3,
-  Check,
-  ArrowUpDown,
-  Sparkles
+  LayoutGrid, 
+  Grid3X3, 
+  Check, 
+  ArrowUpDown, 
+  Sparkles 
 } from 'lucide-react';
 
 // =================================================================
-// 1. 商品基本データ (16アイテム: hoodie -> jacket -> t-shirt -> jeans)
+// 1. 商品基本データ (PLP表示はモデル -1.jpg、モーダル用は flatImage -0.jpg)
 // =================================================================
 interface ProductColor {
   id: string;
   name: string;
   thumbnail: string;
   mainImage: string;
+  flatImage: string;
 }
 
 interface ProductItem {
@@ -49,9 +52,9 @@ const products: ProductItem[] = [
     price: 9990,
     badge: 'ベストセラー',
     colors: [
-      { id: 'green', name: 'グリーン', thumbnail: '/images/products/hoodie/01/hd-01-green-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-green-1.jpg' },
-      { id: 'red', name: 'レッド', thumbnail: '/images/products/hoodie/01/hd-01-red-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-red-1.jpg' },
-      { id: 'yellow', name: 'イエロー', thumbnail: '/images/products/hoodie/01/hd-01-yellow-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-yellow-1.jpg' }
+      { id: 'green', name: 'グリーン', thumbnail: '/images/products/hoodie/01/hd-01-green-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-green-1.jpg', flatImage: '/images/products/hoodie/01/hd-01-green-0.jpg' },
+      { id: 'red', name: 'レッド', thumbnail: '/images/products/hoodie/01/hd-01-red-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-red-1.jpg', flatImage: '/images/products/hoodie/01/hd-01-red-0.jpg' },
+      { id: 'yellow', name: 'イエロー', thumbnail: '/images/products/hoodie/01/hd-01-yellow-1.jpg', mainImage: '/images/products/hoodie/01/hd-01-yellow-1.jpg', flatImage: '/images/products/hoodie/01/hd-01-yellow-0.jpg' }
     ]
   },
   {
@@ -62,8 +65,8 @@ const products: ProductItem[] = [
     price: 5999,
     badge: '新着',
     colors: [
-      { id: 'gray', name: 'グレー', thumbnail: '/images/products/hoodie/02/hd-02-gray-1.jpg', mainImage: '/images/products/hoodie/02/hd-02-gray-1.jpg' },
-      { id: 'white', name: 'ホワイト', thumbnail: '/images/products/hoodie/02/hd-02-white-1.jpg', mainImage: '/images/products/hoodie/02/hd-02-white-1.jpg' }
+      { id: 'gray', name: 'グレー', thumbnail: '/images/products/hoodie/02/hd-02-gray-1.jpg', mainImage: '/images/products/hoodie/02/hd-02-gray-1.jpg', flatImage: '/images/products/hoodie/02/hd-02-gray-0.jpg' },
+      { id: 'white', name: 'ホワイト', thumbnail: '/images/products/hoodie/02/hd-02-white-1.jpg', mainImage: '/images/products/hoodie/02/hd-02-white-1.jpg', flatImage: '/images/products/hoodie/02/hd-02-white-0.jpg' }
     ]
   },
   {
@@ -74,10 +77,10 @@ const products: ProductItem[] = [
     price: 8990,
     badge: '人気',
     colors: [
-      { id: 'brown', name: 'ブラウン', thumbnail: '/images/products/hoodie/03/hd-03-brown-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-brown-1.jpg' },
-      { id: 'orange', name: 'オレンジ', thumbnail: '/images/products/hoodie/03/hd-03-orange-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-orange-1.jpg' },
-      { id: 'white', name: 'ホワイト', thumbnail: '/images/products/hoodie/03/hd-03-white-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-white-1.jpg' },
-      { id: 'yellow', name: 'イエロー', thumbnail: '/images/products/hoodie/03/hd-03-yellow-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-yellow-1.jpg' }
+      { id: 'brown', name: 'ブラウン', thumbnail: '/images/products/hoodie/03/hd-03-brown-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-brown-1.jpg', flatImage: '/images/products/hoodie/03/hd-03-brown-0.jpg' },
+      { id: 'orange', name: 'オレンジ', thumbnail: '/images/products/hoodie/03/hd-03-orange-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-orange-1.jpg', flatImage: '/images/products/hoodie/03/hd-03-orange-0.jpg' },
+      { id: 'white', name: 'ホワイト', thumbnail: '/images/products/hoodie/03/hd-03-white-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-white-1.jpg', flatImage: '/images/products/hoodie/03/hd-03-white-0.jpg' },
+      { id: 'yellow', name: 'イエロー', thumbnail: '/images/products/hoodie/03/hd-03-yellow-1.jpg', mainImage: '/images/products/hoodie/03/hd-03-yellow-1.jpg', flatImage: '/images/products/hoodie/03/hd-03-yellow-0.jpg' }
     ]
   },
   {
@@ -88,9 +91,9 @@ const products: ProductItem[] = [
     price: 8990,
     badge: 'サステナブル',
     colors: [
-      { id: 'gray', name: 'ライトヘザーグレー', thumbnail: '/images/products/hoodie/04/hd-04-gray-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-gray-1.jpg' },
-      { id: 'yellow', name: 'チノ', thumbnail: '/images/products/hoodie/04/hd-04-yellow-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-yellow-1.jpg' },
-      { id: 'navy', name: 'ネイビー', thumbnail: '/images/products/hoodie/04/hd-04-navy-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-navy-1.jpg' }
+      { id: 'gray', name: 'ライトヘザーグレー', thumbnail: '/images/products/hoodie/04/hd-04-gray-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-gray-1.jpg', flatImage: '/images/products/hoodie/04/hd-04-gray-0.jpg' },
+      { id: 'yellow', name: 'チノ', thumbnail: '/images/products/hoodie/04/hd-04-yellow-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-yellow-1.jpg', flatImage: '/images/products/hoodie/04/hd-04-yellow-0.jpg' },
+      { id: 'navy', name: 'ネイビー', thumbnail: '/images/products/hoodie/04/hd-04-navy-1.jpg', mainImage: '/images/products/hoodie/04/hd-04-navy-1.jpg', flatImage: '/images/products/hoodie/04/hd-04-navy-0.jpg' }
     ]
   },
 
@@ -105,8 +108,8 @@ const products: ProductItem[] = [
     price: 22900,
     badge: '限定コラボ',
     colors: [
-      { id: 'vintage-navy', name: 'ヴィンテージネイビー', thumbnail: '/images/products/jacket/01/jk-01-navy-1.jpg', mainImage: '/images/products/jacket/01/jk-01-navy-1.jpg' },
-      { id: 'light-peony', name: 'ライトピオニー', thumbnail: '/images/products/jacket/01/jk-01-pink-1.jpg', mainImage: '/images/products/jacket/01/jk-01-pink-1.jpg' }
+      { id: 'vintage-navy', name: 'ヴィンテージネイビー', thumbnail: '/images/products/jacket/01/jk-01-navy-1.jpg', mainImage: '/images/products/jacket/01/jk-01-navy-1.jpg', flatImage: '/images/products/jacket/01/jk-01-navy-0.jpg' },
+      { id: 'light-peony', name: 'ライトピオニー', thumbnail: '/images/products/jacket/01/jk-01-pink-1.jpg', mainImage: '/images/products/jacket/01/jk-01-pink-1.jpg', flatImage: '/images/products/jacket/01/jk-01-pink-0.jpg' }
     ]
   },
   {
@@ -116,8 +119,8 @@ const products: ProductItem[] = [
     category: 'メンズ ジャケット',
     price: 19900,
     colors: [
-      { id: 'black', name: 'ブラック', thumbnail: '/images/products/jacket/02/jk-02-black-1.jpg', mainImage: '/images/products/jacket/02/jk-02-black-1.jpg' },
-      { id: 'navy', name: 'クラシックネイビー', thumbnail: '/images/products/jacket/02/jk-02-navy-1.jpg', mainImage: '/images/products/jacket/02/jk-02-navy-1.jpg' }
+      { id: 'black', name: 'ブラック', thumbnail: '/images/products/jacket/02/jk-02-black-1.jpg', mainImage: '/images/products/jacket/02/jk-02-black-1.jpg', flatImage: '/images/products/jacket/02/jk-02-black-0.jpg' },
+      { id: 'navy', name: 'クラシックネイビー', thumbnail: '/images/products/jacket/02/jk-02-navy-1.jpg', mainImage: '/images/products/jacket/02/jk-02-navy-1.jpg', flatImage: '/images/products/jacket/02/jk-02-navy-0.jpg' }
     ]
   },
   {
@@ -127,9 +130,9 @@ const products: ProductItem[] = [
     category: 'メンズ ジャケット',
     price: 9990,
     colors: [
-      { id: 'black', name: 'ブラック', thumbnail: '/images/products/jacket/03/jk-03-black-1.jpg', mainImage: '/images/products/jacket/03/jk-03-black-1.jpg' },
-      { id: 'green', name: 'ツイードグリーン', thumbnail: '/images/products/jacket/03/jk-03-green-1.jpg', mainImage: '/images/products/jacket/03/jk-03-green-1.jpg' },
-      { id: 'navy', name: 'ニュークラシックネイビー', thumbnail: '/images/products/jacket/03/jk-03-navy-1.jpg', mainImage: '/images/products/jacket/03/jk-03-navy-1.jpg' }
+      { id: 'black', name: 'ブラック', thumbnail: '/images/products/jacket/03/jk-03-black-1.jpg', mainImage: '/images/products/jacket/03/jk-03-black-1.jpg', flatImage: '/images/products/jacket/03/jk-03-black-0.jpg' },
+      { id: 'green', name: 'ツイードグリーン', thumbnail: '/images/products/jacket/03/jk-03-green-1.jpg', mainImage: '/images/products/jacket/03/jk-03-green-1.jpg', flatImage: '/images/products/jacket/03/jk-03-green-0.jpg' },
+      { id: 'navy', name: 'ニュークラシックネイビー', thumbnail: '/images/products/jacket/03/jk-03-navy-1.jpg', mainImage: '/images/products/jacket/03/jk-03-navy-1.jpg', flatImage: '/images/products/jacket/03/jk-03-navy-0.jpg' }
     ]
   },
   {
@@ -139,12 +142,12 @@ const products: ProductItem[] = [
     category: 'メンズ ジャケット',
     price: 15900,
     colors: [
-      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jacket/04/jk-04-washed-1.jpg', mainImage: '/images/products/jacket/04/jk-04-washed-1.jpg' }
+      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jacket/04/jk-04-washed-1.jpg', mainImage: '/images/products/jacket/04/jk-04-washed-1.jpg', flatImage: '/images/products/jacket/04/jk-04-washed-0.jpg' }
     ]
   },
 
   // -------------------------------------------------------------
-  // 3. T-shirt (01 - 04)
+  // 3. T-shirt (01 - 04: 正確な3色画像パスに修正)
   // -------------------------------------------------------------
   {
     id: 'ts-01',
@@ -154,9 +157,9 @@ const products: ProductItem[] = [
     price: 7990,
     badge: '人気',
     colors: [
-      { id: 'navy', name: 'ネイビー', thumbnail: '/images/products/t-shirt/01/ts-01-navy-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-navy-1.jpg' },
-      { id: 'white', name: 'ホワイト', thumbnail: '/images/products/t-shirt/01/ts-01-white-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-white-1.jpg' },
-      { id: 'green', name: 'グリーン', thumbnail: '/images/products/t-shirt/01/ts-01-green-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-green-1.jpg' }
+      { id: 'yellow', name: 'マスタード', thumbnail: '/images/products/t-shirt/01/ts-01-yellow-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-yellow-1.jpg', flatImage: '/images/products/t-shirt/01/ts-01-yellow-0.jpg' },
+      { id: 'green', name: 'ディープハンター', thumbnail: '/images/products/t-shirt/01/ts-01-green-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-green-1.jpg', flatImage: '/images/products/t-shirt/01/ts-01-green-0.jpg' },
+      { id: 'navy', name: 'ムーンレスナイト', thumbnail: '/images/products/t-shirt/01/ts-01-navy-1.jpg', mainImage: '/images/products/t-shirt/01/ts-01-navy-1.jpg', flatImage: '/images/products/t-shirt/01/ts-01-navy-0.jpg' }
     ]
   },
   {
@@ -166,9 +169,9 @@ const products: ProductItem[] = [
     category: 'メンズ Tシャツ',
     price: 6990,
     colors: [
-      { id: 'black', name: 'ブラック', thumbnail: '/images/products/t-shirt/02/ts-02-black-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-black-1.jpg' },
-      { id: 'gray', name: 'ヘザーグレー', thumbnail: '/images/products/t-shirt/02/ts-02-gray-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-gray-1.jpg' },
-      { id: 'navy', name: 'ニュークラシックネイビー', thumbnail: '/images/products/t-shirt/02/ts-02-navy-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-navy-1.jpg' }
+      { id: 'black', name: 'ブラック', thumbnail: '/images/products/t-shirt/02/ts-02-black-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-black-1.jpg', flatImage: '/images/products/t-shirt/02/ts-02-black-0.jpg' },
+      { id: 'gray', name: 'ヘザーグレー', thumbnail: '/images/products/t-shirt/02/ts-02-gray-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-gray-1.jpg', flatImage: '/images/products/t-shirt/02/ts-02-gray-0.jpg' },
+      { id: 'navy', name: 'ニュークラシックネイビー', thumbnail: '/images/products/t-shirt/02/ts-02-navy-1.jpg', mainImage: '/images/products/t-shirt/02/ts-02-navy-1.jpg', flatImage: '/images/products/t-shirt/02/ts-02-navy-0.jpg' }
     ]
   },
   {
@@ -179,8 +182,8 @@ const products: ProductItem[] = [
     price: 1999,
     badge: '限定',
     colors: [
-      { id: 'yellow', name: 'ブラジル', thumbnail: '/images/products/t-shirt/03/ts-03-yellow-1.jpg', mainImage: '/images/products/t-shirt/03/ts-03-yellow-1.jpg' },
-      { id: 'blue', name: 'アルゼンチン', thumbnail: '/images/products/t-shirt/03/ts-03-blue-1.jpg', mainImage: '/images/products/t-shirt/03/ts-03-blue-1.jpg' }
+      { id: 'yellow', name: 'ブラジル', thumbnail: '/images/products/t-shirt/03/ts-03-yellow-1.jpg', mainImage: '/images/products/t-shirt/03/ts-03-yellow-1.jpg', flatImage: '/images/products/t-shirt/03/ts-03-yellow-0.jpg' },
+      { id: 'blue', name: 'アルゼンチン', thumbnail: '/images/products/t-shirt/03/ts-03-blue-1.jpg', mainImage: '/images/products/t-shirt/03/ts-03-blue-1.jpg', flatImage: '/images/products/t-shirt/03/ts-03-blue-0.jpg' }
     ]
   },
   {
@@ -190,14 +193,14 @@ const products: ProductItem[] = [
     category: 'メンズ Tシャツ',
     price: 5990,
     colors: [
-      { id: 'navy', name: 'ネイビーストライプ', thumbnail: '/images/products/t-shirt/04/ts-04-navy-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-navy-1.jpg' },
-      { id: 'camo', name: 'カーキタン・リーフ', thumbnail: '/images/products/t-shirt/04/ts-04-camo-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-camo-1.jpg' },
-      { id: 'green', name: 'グリーンストライプ', thumbnail: '/images/products/t-shirt/04/ts-04-green-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-green-1.jpg' }
+      { id: 'navy', name: 'ネイビーストライプ', thumbnail: '/images/products/t-shirt/04/ts-04-navy-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-navy-1.jpg', flatImage: '/images/products/t-shirt/04/ts-04-navy-0.jpg' },
+      { id: 'camo', name: 'カーキタン・リーフ', thumbnail: '/images/products/t-shirt/04/ts-04-camo-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-camo-1.jpg', flatImage: '/images/products/t-shirt/04/ts-04-camo-0.jpg' },
+      { id: 'green', name: 'グリーンストライプ', thumbnail: '/images/products/t-shirt/04/ts-04-green-1.jpg', mainImage: '/images/products/t-shirt/04/ts-04-green-1.jpg', flatImage: '/images/products/t-shirt/04/ts-04-green-0.jpg' }
     ]
   },
 
   // -------------------------------------------------------------
-  // 4. Jeans (01 - 04)
+  // 4. Jeans (01 - 04: 試着非対象)
   // -------------------------------------------------------------
   {
     id: 'jn-01',
@@ -207,7 +210,7 @@ const products: ProductItem[] = [
     price: 9990,
     badge: '人気',
     colors: [
-      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jeans/01/jn-01-washed-1.jpg', mainImage: '/images/products/jeans/01/jn-01-washed-1.jpg' }
+      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jeans/01/jn-01-washed-1.jpg', mainImage: '/images/products/jeans/01/jn-01-washed-1.jpg', flatImage: '/images/products/jeans/01/jn-01-washed-0.jpg' }
     ]
   },
   {
@@ -217,7 +220,7 @@ const products: ProductItem[] = [
     category: 'メンズ ジーンズ',
     price: 9990,
     colors: [
-      { id: 'dark-washed', name: 'ダークウォッシュ', thumbnail: '/images/products/jeans/02/jn-02-washed-1.jpg', mainImage: '/images/products/jeans/02/jn-02-washed-1.jpg' }
+      { id: 'dark-washed', name: 'ダークウォッシュ', thumbnail: '/images/products/jeans/02/jn-02-washed-1.jpg', mainImage: '/images/products/jeans/02/jn-02-washed-1.jpg', flatImage: '/images/products/jeans/02/jn-02-washed-0.jpg' }
     ]
   },
   {
@@ -227,7 +230,7 @@ const products: ProductItem[] = [
     category: 'メンズ ジーンズ',
     price: 9990,
     colors: [
-      { id: 'rinsed', name: 'リンス', thumbnail: '/images/products/jeans/03/jn-03-rinsed-1.jpg', mainImage: '/images/products/jeans/03/jn-03-rinsed-1.jpg' }
+      { id: 'rinsed', name: 'リンス', thumbnail: '/images/products/jeans/03/jn-03-rinsed-1.jpg', mainImage: '/images/products/jeans/03/jn-03-rinsed-1.jpg', flatImage: '/images/products/jeans/03/jn-03-rinsed-0.jpg' }
     ]
   },
   {
@@ -237,7 +240,7 @@ const products: ProductItem[] = [
     category: 'メンズ ジーンズ',
     price: 8990,
     colors: [
-      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jeans/04/jn-04-washed-1.jpg', mainImage: '/images/products/jeans/04/jn-04-washed-1.jpg' }
+      { id: 'washed', name: 'ミディアムウォッシュ', thumbnail: '/images/products/jeans/04/jn-04-washed-1.jpg', mainImage: '/images/products/jeans/04/jn-04-washed-1.jpg', flatImage: '/images/products/jeans/04/jn-04-washed-0.jpg' }
     ]
   }
 ];
@@ -265,12 +268,19 @@ const sortOptions = [
 ];
 
 export default function ProductListingPage() {
+  const router = useRouter();
+
   const [desktopColumns, setDesktopColumns] = useState<3 | 4>(3);
   const [mobileColumns, setMobileColumns] = useState<1 | 2>(2);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState('');
   const [isSortOpen, setIsSortOpen] = useState(false);
+
+  // ヴァーチャル試着モーダル用ステート
+  const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+  const [tryOnProduct, setTryOnProduct] = useState<ProductItem | null>(null);
+  const [tryOnColorIdx, setTryOnColorIdx] = useState(0);
 
   const sortRef = useRef<HTMLDivElement>(null);
 
@@ -299,6 +309,20 @@ export default function ProductListingPage() {
   };
 
   const selectedSortLabel = sortOptions.find((opt) => opt.value === sortBy)?.label;
+
+  // 試着モーダルを開く
+  const handleOpenTryOn = (product: ProductItem, colorIdx: number) => {
+    setTryOnProduct(product);
+    setTryOnColorIdx(colorIdx);
+    setIsTryOnOpen(true);
+  };
+
+  // 試着モーダル内で「この商品を購入する」を押した時 -> 該当商品のPDPへ遷移
+  const handleProceedToPurchase = () => {
+    if (tryOnProduct) {
+      router.push(tryOnProduct.pdpPath);
+    }
+  };
 
   const SortDropdown = () => (
     <div ref={sortRef} className="relative inline-block">
@@ -367,7 +391,6 @@ export default function ProductListingPage() {
            ========================================================= */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 md:gap-16 mb-20">
           
-          {/* カテゴリータイトル */}
           <div>
             <h1 className="text-[20px] md:text-[24px] font-bold text-gap-dark tracking-tight leading-tight">
               メンズ コレクション ({products.length})
@@ -377,7 +400,6 @@ export default function ProductListingPage() {
           {/* デスクトップ表示 (md以上) */}
           <div className="hidden md:flex items-center justify-end gap-12 w-auto">
             
-            {/* カラムレイアウト切替ボタン (3カラム / 4カラム) */}
             <div className="flex items-center border border-gray-200 rounded-sm p-2 h-[44px] gap-2">
               <button
                 onClick={() => setDesktopColumns(3)}
@@ -401,7 +423,6 @@ export default function ProductListingPage() {
               </button>
             </div>
 
-            {/* 商品を絞り込むボタン */}
             <button
               onClick={() => setIsFilterOpen(true)}
               className="flex items-center gap-6 text-[13px] font-bold text-gap-dark hover:text-gap-navy transition-colors cursor-pointer whitespace-nowrap"
@@ -410,7 +431,6 @@ export default function ProductListingPage() {
               <span>商品を絞り込む</span>
             </button>
 
-            {/* ソートセレクター */}
             <SortDropdown />
 
           </div>
@@ -465,7 +485,7 @@ export default function ProductListingPage() {
         </div>
 
         {/* =========================================================
-           3. 商品グリッド (全16アイテム)
+           3. 商品グリッド (全16アイテム: モデル画像一覧で表示)
            ========================================================= */}
         <div 
           className={`grid gap-x-[24px] gap-y-[28px] sm:gap-x-20 sm:gap-y-36 md:gap-x-[24px] md:gap-y-40 ${
@@ -475,7 +495,11 @@ export default function ProductListingPage() {
           }`}
         >
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              onOpenTryOn={handleOpenTryOn}
+            />
           ))}
         </div>
 
@@ -510,8 +534,6 @@ export default function ProductListingPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-gray-200 text-13">
-          
-          {/* 1. ラインナップ */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('lineup')}
@@ -532,7 +554,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 2. サイズ */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('size')}
@@ -556,7 +577,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 3. カラー */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('color')}
@@ -582,7 +602,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 4. 素材 */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('material')}
@@ -603,7 +622,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 5. 価格 */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('price')}
@@ -624,7 +642,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 6. フィット感 */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('fit')}
@@ -645,7 +662,6 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* 7. セール・特別価格 */}
           <div className="px-16 py-8">
             <button 
               onClick={() => toggleAccordion('sale')}
@@ -663,10 +679,8 @@ export default function ProductListingPage() {
               </div>
             )}
           </div>
-
         </div>
 
-        {/* 表示するボタン (GAP NAVY) */}
         <div className="p-16 border-t border-gray-200 bg-white">
           <button 
             onClick={() => setIsFilterOpen(false)}
@@ -675,8 +689,30 @@ export default function ProductListingPage() {
             表示する ({products.length})
           </button>
         </div>
-
       </div>
+
+      {/* =========================================================
+         5. 共通 Virtual Try-On モーダル (モーダル側へは flatImage: -0.jpg を渡す)
+         ========================================================= */}
+      {tryOnProduct && (
+        <VirtualTryOnModal
+          isOpen={isTryOnOpen}
+          onClose={() => setIsTryOnOpen(false)}
+          product={{
+            id: tryOnProduct.id,
+            name: tryOnProduct.name,
+            price: tryOnProduct.price,
+            category: tryOnProduct.category,
+            colors: tryOnProduct.colors.map((c) => ({
+              id: c.id,
+              name: c.name,
+              images: [c.flatImage] // モーダルでは置き画プロダクト画像（0番）を使用
+            }))
+          }}
+          initialColorIndex={tryOnColorIdx}
+          onProceedToPurchase={handleProceedToPurchase}
+        />
+      )}
 
       <Footer />
     </div>
@@ -684,23 +720,29 @@ export default function ProductListingPage() {
 }
 
 // =================================================================
-// 5. 商品カードコンポーネント (各要素間12px・Hover時GAP NAVY)
+// 6. 商品カードコンポーネント (モデル画像 -1.jpg を一覧表示)
 // =================================================================
-function ProductCard({ product }: { product: ProductItem }) {
+interface ProductCardProps {
+  product: ProductItem;
+  onOpenTryOn: (product: ProductItem, colorIdx: number) => void;
+}
+
+function ProductCard({ product, onOpenTryOn }: ProductCardProps) {
   const [activeColorIdx, setActiveColorIdx] = useState(0);
 
   const activeColor = product.colors[activeColorIdx] || product.colors[0];
+  const isTryOnSupported = !product.id.startsWith('jn-');
 
   return (
     <div className="group flex flex-col relative">
       
-      {/* メイン商品画像エリア (下マージン 12px) */}
+      {/* メイン商品画像エリア (モデル着用画像: -1.jpg) */}
       <div className="relative aspect-[3/4] bg-[#f8f8f8] rounded-[2px] overflow-hidden mb-[12px] border border-gray-100">
         <Link href={product.pdpPath} className="block w-full h-full">
           <img
             src={activeColor.mainImage}
             alt={`${product.name} - ${activeColor.name}`}
-            className="w-full h-full object-contain object-top transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
               e.currentTarget.src = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80';
             }}
@@ -708,7 +750,7 @@ function ProductCard({ product }: { product: ProductItem }) {
         </Link>
       </div>
 
-      {/* カラー展開サムネイルリスト (下マージン 12px) */}
+      {/* カラー展開サムネイルリスト (モデル着用画像: -1.jpg) */}
       <div className="flex items-center gap-6 mb-[12px] overflow-x-auto no-scrollbar py-1">
         {product.colors.map((color, cIdx) => (
           <button
@@ -750,23 +792,25 @@ function ProductCard({ product }: { product: ProductItem }) {
           {product.category}
         </p>
 
-        {/* 価格 (16px) ＆ ヴァーチャル試着ボタン (上マージン 12px) */}
+        {/* 価格 ＆ ヴァーチャル試着ボタン */}
         <div className="flex items-center justify-between flex-wrap gap-y-4 gap-x-6 mt-[12px]">
           <p className="text-[16px] font-bold text-gap-dark whitespace-nowrap">
             ¥{product.price.toLocaleString()} <span className="text-[11px] font-normal text-gap-muted">(税込)</span>
           </p>
 
-          {/* ヴァーチャル試着ボタン */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-            }}
-            className="inline-flex items-center gap-4 text-[11px] sm:text-[12px] font-bold text-gap-dark border border-gray-300 hover:border-gap-navy hover:bg-gap-navy hover:text-white px-8 py-4 rounded-full transition-colors whitespace-nowrap cursor-pointer"
-          >
-            <Sparkles size={13} className="hidden sm:inline-block" />
-            <span>ヴァーチャル試着する</span>
-          </button>
+          {isTryOnSupported && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenTryOn(product, activeColorIdx);
+              }}
+              className="inline-flex items-center gap-4 text-[11px] sm:text-[12px] font-bold text-gap-dark border border-gray-300 hover:border-gap-navy hover:bg-gap-navy hover:text-white px-8 py-4 rounded-full transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <Sparkles size={13} className="hidden sm:inline-block" />
+              <span>ヴァーチャル試着する</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -16,7 +16,8 @@ import {
   ChevronRight,
   ArrowLeft,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 export interface TryOnProductColor {
@@ -43,7 +44,7 @@ interface VirtualTryOnModalProps {
 
 type Step = 
   | 'color'          // Step 1: カラー選択
-  | 'source'         // Step 2: アップロード or カメラ選択 (デスクトップのみ)
+  | 'source'         // Step 2: アップロード or カメラ選択
   | 'camera'         // Step 3-A: カメラ撮影
   | 'camera-preview' // Step 3-A: 撮影確認
   | 'upload'         // Step 3-B: 写真アップロード
@@ -62,38 +63,36 @@ export default function VirtualTryOnModal({
   const [selectedColorIdx, setSelectedColorIdx] = useState(initialColorIndex);
   const [guideType, setGuideType] = useState<'upper' | 'full'>('upper');
   
-  // 画面幅（モバイル判定）
   const [isMobile, setIsMobile] = useState(false);
-
-  // 撮影・アップロード画像
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  // カメラ用 Ref & State
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // 実際のAI生成画像URL & 生成エラー
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // デスクトップ用とモバイル用で別々のVideo Refを用意して競合を防止
+  const desktopVideoRef = useRef<HTMLVideoElement | null>(null);
+  const mobileVideoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  // 3秒カウントダウン State
   const [countdown, setCountdown] = useState<number | null>(null);
-
-  // 生成中プログレス ＆ スライドショー
   const [progress, setProgress] = useState(0);
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // シェアメニュー
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  // スタイリング写真 (3枚)
   const stylingSlides = [
     { src: '/images/virtual-try-on/loading/style-01.jpg', caption: 'Classic Casual Styling' },
     { src: '/images/virtual-try-on/loading/style-02.jpg', caption: 'Urban Street Mix' },
     { src: '/images/virtual-try-on/loading/style-03.jpg', caption: 'Relaxed Layered Look' },
   ];
 
-  // リサイズ監視（モバイル判定）
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -103,13 +102,38 @@ export default function VirtualTryOnModal({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // モーダルオープン時の初期化
+  // カメラ停止処理
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setStream(null);
+  };
+
+  // ビデオ要素にストリームを確実にバインドして再生
+  const attachStreamToVideos = (mediaStream: MediaStream) => {
+    const videos = [desktopVideoRef.current, mobileVideoRef.current];
+    videos.forEach((video) => {
+      if (video) {
+        video.srcObject = mediaStream;
+        video.muted = true;
+        video.play().catch((err) => {
+          console.warn('Video play prevented:', err);
+        });
+      }
+    });
+  };
+
+  // モーダル開閉時の初期化
   useEffect(() => {
     if (isOpen) {
       setStep('color');
       setSelectedColorIdx(initialColorIndex);
       setCapturedImage(null);
       setUploadedImage(null);
+      setGeneratedImageUrl(null);
+      setGenerationError(null);
       setCountdown(null);
       setProgress(0);
       setIsShareOpen(false);
@@ -126,41 +150,60 @@ export default function VirtualTryOnModal({
     };
   }, [isOpen, initialColorIndex]);
 
-  // カメラ起動
-  const startCamera = async () => {
-    setCameraError(null);
-    try {
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      };
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
-      setCameraError('カメラの起動に失敗しました。カメラのアクセス許可をご確認ください。');
-    }
-  };
+  // step === 'camera' に切り替わったタイミングでカメラを起動
+  useEffect(() => {
+    if (step === 'camera') {
+      let isMounted = true;
+      setCameraError(null);
 
-  // カメラ停止
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
+      const initCamera = async () => {
+        try {
+          const constraints: MediaStreamConstraints = {
+            video: {
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          };
+          const ms = await navigator.mediaDevices.getUserMedia(constraints);
+          if (!isMounted) {
+            ms.getTracks().forEach((track) => track.stop());
+            return;
+          }
+          streamRef.current = ms;
+          setStream(ms);
+          attachStreamToVideos(ms);
+        } catch (err) {
+          console.error('Camera access error:', err);
+          if (isMounted) {
+            setCameraError('カメラの起動に失敗しました。カメラのアクセス許可をご確認ください。');
+          }
+        }
+      };
+
+      initCamera();
+
+      return () => {
+        isMounted = false;
+        stopCamera();
+      };
+    } else {
+      stopCamera();
     }
-  };
+  }, [step]);
+
+  // ストリーム取得後に両方の要素へ再同期
+  useEffect(() => {
+    if (stream && step === 'camera') {
+      attachStreamToVideos(stream);
+    }
+  }, [stream, step]);
 
   // 撮影実行
   const executeCapture = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
+    const video = isMobile ? (mobileVideoRef.current || desktopVideoRef.current) : (desktopVideoRef.current || mobileVideoRef.current);
+    if (video && canvasRef.current) {
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
@@ -175,7 +218,6 @@ export default function VirtualTryOnModal({
     }
   };
 
-  // 3秒カウントダウン制御
   useEffect(() => {
     if (countdown === null) return;
     if (countdown > 0) {
@@ -195,7 +237,6 @@ export default function VirtualTryOnModal({
     }
   };
 
-  // ファイルアップロード (デスクトップ用)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -208,37 +249,63 @@ export default function VirtualTryOnModal({
     }
   };
 
-  // 生成処理シミュレーション
-  useEffect(() => {
-    if (step === 'generating') {
-      setProgress(0);
-      setActiveSlide(0);
+  const currentColor = product.colors[selectedColorIdx] || product.colors[0];
 
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            setTimeout(() => setStep('result'), 400);
-            return 100;
-          }
-          return prev + 2;
-        });
-      }, 65);
+  // 実際のAI試着生成リクエストの実行
+  const startGeneratingTryOn = async () => {
+    const userImg = capturedImage || uploadedImage;
+    if (!userImg) return;
 
-      const slideInterval = setInterval(() => {
-        setActiveSlide((prev) => (prev + 1) % stylingSlides.length);
-      }, 1400);
+    setStep('generating');
+    setProgress(10);
+    setGenerationError(null);
 
-      return () => {
-        clearInterval(progressInterval);
-        clearInterval(slideInterval);
-      };
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => (prev < 90 ? prev + 3 : prev));
+    }, 200);
+
+    const slideTimer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % stylingSlides.length);
+    }, 1400);
+
+    try {
+      const garmentImg = currentColor.images[0];
+      const res = await fetch('/api/tryon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userImage: userImg,
+          garmentImage: garmentImg,
+          garmentName: product.name,
+          category: product.category,
+          garmentColor: currentColor.name,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '画像生成に失敗しました。');
+      }
+
+      setProgress(100);
+      setGeneratedImageUrl(data.imageUrl);
+      clearInterval(progressTimer);
+      clearInterval(slideTimer);
+      setTimeout(() => {
+        setStep('result');
+      }, 400);
+    } catch (err: any) {
+      console.error('Try-On Generation Error:', err);
+      clearInterval(progressTimer);
+      clearInterval(slideTimer);
+      setGenerationError(err.message || '試着の生成に失敗しました。');
     }
-  }, [step]);
+  };
 
   const handleCopyLink = () => {
-    const dummyUrl = window.location.origin + '/images/virtual-try-on/result-demo.jpg';
-    navigator.clipboard.writeText(dummyUrl).then(() => {
+    const copyTarget = generatedImageUrl || (window.location.origin + '/images/virtual-try-on/result-demo.jpg');
+    navigator.clipboard.writeText(copyTarget).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     });
@@ -246,9 +313,6 @@ export default function VirtualTryOnModal({
 
   if (!isOpen) return null;
 
-  const currentColor = product.colors[selectedColorIdx] || product.colors[0];
-
-  // デスクトップ用ステップ番号 (1, 2, 3)
   const getCurrentStepNum = () => {
     if (step === 'color') return 1;
     if (step === 'source') return 2;
@@ -257,7 +321,6 @@ export default function VirtualTryOnModal({
   };
   const currentStepNum = getCurrentStepNum();
 
-  // モバイル用ステップテキスト
   const getMobileStepText = () => {
     if (step === 'color') return 'Step 1 of 3';
     if (['camera', 'camera-preview'].includes(step)) return 'Step 2 of 3';
@@ -279,15 +342,17 @@ export default function VirtualTryOnModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-[48px] bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       
-      {/* モーダル本体: モバイル時は全画面(100%)、デスクトップ時は横幅700px固定・上下左右48pxマージン */}
+      {/* 隠しCanvas (撮影用) */}
+      <canvas ref={canvasRef} className="hidden" />
+
+      {/* モーダル本体 */}
       <div className="relative w-full h-full md:max-w-[700px] bg-white rounded-none md:rounded-[4px] shadow-2xl flex flex-col justify-between overflow-y-auto md:overflow-hidden p-16 md:p-[48px] select-none">
         
         {/* =========================================================
-           1. ヘッダーバー: 戻る、Step表示、閉じる (垂直中央一直線)
+           1. ヘッダーバー (垂直中央一直線)
            ========================================================= */}
         <div className="w-full h-[40px] flex items-center justify-between flex-shrink-0">
           
-          {/* 左端: 戻るボタン */}
           <div className="w-[40px] flex items-center justify-start">
             {step !== 'color' && step !== 'generating' && step !== 'result' && (
               <button
@@ -295,7 +360,6 @@ export default function VirtualTryOnModal({
                   if (step === 'camera' || step === 'upload') {
                     stopCamera();
                     setCountdown(null);
-                    // モバイル時は直接カラー選択へ戻す
                     if (isMobile) {
                       setStep('color');
                     } else {
@@ -303,14 +367,13 @@ export default function VirtualTryOnModal({
                     }
                   } else if (step === 'camera-preview') {
                     setStep('camera');
-                    startCamera();
                   } else if (step === 'upload-preview') {
                     setStep('upload');
                   } else if (step === 'source') {
                     setStep('color');
                   }
                 }}
-                className="p-6 text-gray-500 hover:text-black hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                className="p-6 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                 aria-label="戻る"
               >
                 <ArrowLeft size={18} />
@@ -318,9 +381,7 @@ export default function VirtualTryOnModal({
             )}
           </div>
 
-          {/* 中央: Step表記 */}
           <div className="flex items-center justify-center">
-            {/* デスクトップ用ラベル表記 (Step 1 ＞ Step 2 ＞ Step 3) */}
             {currentStepNum !== null && (
               <div className="hidden md:flex items-center gap-8 select-none">
                 <button
@@ -367,7 +428,6 @@ export default function VirtualTryOnModal({
               </div>
             )}
 
-            {/* モバイル用Step表記 (Step X of 3) */}
             {step !== 'generating' && step !== 'result' && (
               <div className="flex md:hidden items-center justify-center">
                 <span className="text-[13px] font-bold text-gap-dark tracking-wide">
@@ -377,7 +437,6 @@ export default function VirtualTryOnModal({
             )}
           </div>
 
-          {/* 右端: 閉じるボタン */}
           <div className="w-[40px] flex items-center justify-end">
             <button
               onClick={onClose}
@@ -396,23 +455,21 @@ export default function VirtualTryOnModal({
         <div className="flex-1 flex flex-col justify-center items-center w-full min-h-0 my-auto py-8 md:py-0">
 
           {/* -------------------------------------------------------
-             STEP 1: カラー選択
+             STEP 1: カラー選択 (置き画を枠いっぱいに大きく表示)
              ------------------------------------------------------- */}
           {step === 'color' && (
             <div className="w-full">
               
-              {/* デスクトップ表示 (2カラム) */}
+              {/* デスクトップ表示 */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
-                {/* メイン商品画像 */}
                 <div className="w-[240px] h-[360px] bg-[#f8f8f8] rounded-[2px] overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center flex-shrink-0">
                   <img
                     src={currentColor.images[0]}
                     alt={currentColor.name}
-                    className="w-full h-full object-contain p-8"
+                    className="w-full h-full object-contain"
                   />
                 </div>
 
-                {/* 右: タイトル ＆ カラー選択 ＆ CTA */}
                 <div className="flex-1 min-w-0 flex flex-col justify-between h-[360px] text-left">
                   <div>
                     <div className="h-[28px] flex items-center">
@@ -438,14 +495,14 @@ export default function VirtualTryOnModal({
                           <button
                             key={c.id}
                             onClick={() => setSelectedColorIdx(idx)}
-                            className={`relative w-[48px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer ${
+                            className={`relative w-[48px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer bg-[#f8f8f8] flex items-center justify-center ${
                               selectedColorIdx === idx
                                 ? 'border-gap-navy scale-105 shadow-sm'
                                 : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100'
                             }`}
                             title={c.name}
                           >
-                            <img src={c.images[0]} alt={c.name} className="w-full h-full object-cover" />
+                            <img src={c.images[0]} alt={c.name} className="w-full h-full object-contain" />
                           </button>
                         ))}
                       </div>
@@ -464,7 +521,7 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 (縦並び・商品名と価格は非表示・ボタンは「撮影する」) */}
+              {/* モバイル表示 */}
               <div className="flex md:hidden flex-col items-center justify-between w-full h-full max-w-[320px] mx-auto text-center">
                 <div className="mb-8">
                   <h3 className="text-[17px] font-bold text-gap-dark">
@@ -472,38 +529,32 @@ export default function VirtualTryOnModal({
                   </h3>
                 </div>
 
-                {/* メイン画像が上 */}
                 <div className="w-[200px] h-[300px] bg-[#f8f8f8] rounded-[2px] overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center flex-shrink-0 mb-12">
                   <img
                     src={currentColor.images[0]}
                     alt={currentColor.name}
-                    className="w-full h-full object-contain p-6"
+                    className="w-full h-full object-contain"
                   />
                 </div>
 
-                {/* 直下にカラーバリエーションのサムネ画像 */}
                 <div className="flex items-center justify-center gap-8 mb-16">
                   {product.colors.map((c, idx) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedColorIdx(idx)}
-                      className={`relative w-[46px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer ${
+                      className={`relative w-[46px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer bg-[#f8f8f8] flex items-center justify-center ${
                         selectedColorIdx === idx
                           ? 'border-gap-navy scale-105 shadow-sm'
                           : 'border-transparent opacity-60'
                       }`}
                     >
-                      <img src={c.images[0]} alt={c.name} className="w-full h-full object-cover" />
+                      <img src={c.images[0]} alt={c.name} className="w-full h-full object-contain" />
                     </button>
                   ))}
                 </div>
 
-                {/* ボタン: 直接撮影画面へ遷移 */}
                 <button
-                  onClick={() => {
-                    setStep('camera');
-                    startCamera();
-                  }}
+                  onClick={() => setStep('camera')}
                   className="w-full h-[46px] bg-gap-navy text-white rounded-full font-bold text-[14px] hover:bg-[#001b3d] transition-colors flex items-center justify-center gap-6 shadow-sm cursor-pointer"
                 >
                   <span>撮影する</span>
@@ -515,7 +566,7 @@ export default function VirtualTryOnModal({
           )}
 
           {/* -------------------------------------------------------
-             STEP 2: 写真準備方法の選択 (デスクトップのみ)
+             STEP 2: 写真準備方法の選択 (デスクトップ)
              ------------------------------------------------------- */}
           {step === 'source' && (
             <div className="flex flex-col items-center justify-between w-full h-[360px] text-center">
@@ -532,10 +583,7 @@ export default function VirtualTryOnModal({
 
               <div className="grid grid-cols-2 gap-16 w-full max-w-[560px] mb-12">
                 <button
-                  onClick={() => {
-                    setStep('camera');
-                    startCamera();
-                  }}
+                  onClick={() => setStep('camera')}
                   className="h-[185px] rounded-[4px] border border-gray-200 hover:border-gap-navy hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center p-16 group cursor-pointer"
                 >
                   <div className="w-[52px] h-[52px] rounded-full bg-gray-100 group-hover:bg-gap-navy group-hover:text-white flex items-center justify-center transition-colors mb-10 text-gap-dark">
@@ -566,22 +614,24 @@ export default function VirtualTryOnModal({
           )}
 
           {/* -------------------------------------------------------
-             STEP 3-A: カメラ撮影 (モバイルは映像の下にガイド切替と撮影ボタン)
+             STEP 3-A: カメラ撮影 (desktopVideoRef / mobileVideoRef)
              ------------------------------------------------------- */}
           {step === 'camera' && (
             <div className="w-full">
               
-              {/* デスクトップ表示 (2カラム) */}
+              {/* デスクトップ表示 */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
                 <div className="relative w-[240px] h-[360px] bg-black rounded-[4px] overflow-hidden flex items-center justify-center shadow-inner flex-shrink-0">
                   <video
-                    ref={videoRef}
+                    ref={desktopVideoRef}
                     autoPlay
                     playsInline
                     muted
+                    onLoadedMetadata={(e) => {
+                      e.currentTarget.play().catch(() => {});
+                    }}
                     className="w-full h-full object-cover transform -scale-x-100"
                   />
-                  <canvas ref={canvasRef} className="hidden" />
 
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     {guideType === 'upper' ? (
@@ -663,7 +713,7 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 (縦並び: カメラ映像が上、下にガイド切替と撮影ボタン) */}
+              {/* モバイル表示 */}
               <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
                 <div className="mb-8">
                   <h3 className="text-[17px] font-bold text-gap-dark">
@@ -671,16 +721,17 @@ export default function VirtualTryOnModal({
                   </h3>
                 </div>
 
-                {/* カメラ映像 */}
                 <div className="relative w-[200px] h-[300px] bg-black rounded-[4px] overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 mb-12">
                   <video
-                    ref={videoRef}
+                    ref={mobileVideoRef}
                     autoPlay
                     playsInline
                     muted
+                    onLoadedMetadata={(e) => {
+                      e.currentTarget.play().catch(() => {});
+                    }}
                     className="w-full h-full object-cover transform -scale-x-100"
                   />
-                  <canvas ref={canvasRef} className="hidden" />
 
                   <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     {guideType === 'upper' ? (
@@ -706,7 +757,6 @@ export default function VirtualTryOnModal({
                   )}
                 </div>
 
-                {/* メイン画像エリアの直下にガイド切り替えボタン */}
                 <div className="w-[260px] h-[40px] bg-gray-100 p-2 rounded-full flex items-center select-none mb-12">
                   <button
                     onClick={() => setGuideType('upper')}
@@ -726,7 +776,6 @@ export default function VirtualTryOnModal({
                   </button>
                 </div>
 
-                {/* 撮影ボタン */}
                 <button
                   onClick={handleStartCountdown}
                   disabled={countdown !== null || !!cameraError}
@@ -745,8 +794,6 @@ export default function VirtualTryOnModal({
              ------------------------------------------------------- */}
           {step === 'camera-preview' && capturedImage && (
             <div className="w-full">
-              
-              {/* デスクトップ表示 */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
                 <div className="w-[240px] h-[360px] bg-black rounded-[4px] overflow-hidden shadow-md flex-shrink-0">
                   <img src={capturedImage} alt="撮影プレビュー" className="w-full h-full object-cover" />
@@ -768,7 +815,6 @@ export default function VirtualTryOnModal({
                     <button
                       onClick={() => {
                         setStep('camera');
-                        startCamera();
                       }}
                       className="flex-1 h-[46px] border border-gray-300 rounded-full font-bold text-[12px] text-gray-700 hover:border-black flex items-center justify-center gap-4 transition-colors cursor-pointer"
                     >
@@ -776,7 +822,7 @@ export default function VirtualTryOnModal({
                       <span>再撮影</span>
                     </button>
                     <button
-                      onClick={() => setStep('generating')}
+                      onClick={startGeneratingTryOn}
                       className="flex-1 h-[46px] bg-gap-navy text-white rounded-full font-bold text-[12px] hover:bg-[#001b3d] flex items-center justify-center gap-4 shadow-sm transition-colors cursor-pointer"
                     >
                       <Check size={16} />
@@ -786,7 +832,6 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 */}
               <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
                 <h3 className="text-[17px] font-bold text-gap-dark mb-10">
                   この写真で試着しますか？
@@ -800,7 +845,6 @@ export default function VirtualTryOnModal({
                   <button
                     onClick={() => {
                       setStep('camera');
-                      startCamera();
                     }}
                     className="flex-1 h-[44px] border border-gray-300 rounded-full font-bold text-[12px] text-gray-700 hover:border-black flex items-center justify-center gap-4 transition-colors cursor-pointer"
                   >
@@ -808,7 +852,7 @@ export default function VirtualTryOnModal({
                     <span>再撮影</span>
                   </button>
                   <button
-                    onClick={() => setStep('generating')}
+                    onClick={startGeneratingTryOn}
                     className="flex-1 h-[44px] bg-gap-navy text-white rounded-full font-bold text-[12px] hover:bg-[#001b3d] flex items-center justify-center gap-4 shadow-sm transition-colors cursor-pointer"
                   >
                     <Check size={16} />
@@ -816,12 +860,11 @@ export default function VirtualTryOnModal({
                   </button>
                 </div>
               </div>
-
             </div>
           )}
 
           {/* -------------------------------------------------------
-             STEP 3-B: 写真アップロード (デスクトップ用)
+             STEP 3-B: 写真アップロード
              ------------------------------------------------------- */}
           {step === 'upload' && (
             <div className="flex flex-col items-center justify-between w-full h-[360px] text-center">
@@ -857,7 +900,7 @@ export default function VirtualTryOnModal({
           )}
 
           {/* -------------------------------------------------------
-             STEP 3-B PREVIEW: アップロード確認 (デスクトップ用)
+             STEP 3-B PREVIEW: アップロード確認
              ------------------------------------------------------- */}
           {step === 'upload-preview' && uploadedImage && (
             <div className="flex items-start justify-center gap-24 w-full h-[360px]">
@@ -886,7 +929,7 @@ export default function VirtualTryOnModal({
                     <span>再選択</span>
                   </button>
                   <button
-                    onClick={() => setStep('generating')}
+                    onClick={startGeneratingTryOn}
                     className="flex-1 h-[46px] bg-gap-navy text-white rounded-full font-bold text-[12px] hover:bg-[#001b3d] flex items-center justify-center gap-4 shadow-sm transition-colors cursor-pointer"
                   >
                     <Check size={16} />
@@ -902,8 +945,6 @@ export default function VirtualTryOnModal({
              ------------------------------------------------------- */}
           {step === 'generating' && (
             <div className="w-full">
-              
-              {/* デスクトップ表示 */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
                 <div className="relative w-[240px] h-[360px] rounded-[4px] overflow-hidden shadow-md bg-gray-100 flex-shrink-0">
                   {stylingSlides.map((slide, idx) => (
@@ -943,7 +984,7 @@ export default function VirtualTryOnModal({
                   <div className="w-[260px] mt-24">
                     <div className="w-full h-[6px] bg-gray-200 rounded-full overflow-hidden mb-8">
                       <div
-                        className="h-full bg-gap-navy transition-all duration-150 ease-out"
+                        className="h-full bg-gap-navy transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -951,6 +992,22 @@ export default function VirtualTryOnModal({
                       {progress}%
                     </span>
                   </div>
+
+                  {generationError && (
+                    <div className="mt-16 p-12 bg-red-50 border border-red-200 rounded text-red-600 text-[12px] flex items-start gap-6">
+                      <AlertCircle size={16} className="flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-bold">生成エラー</p>
+                        <p className="text-[11px] mt-1">{generationError}</p>
+                        <button
+                          onClick={() => setStep(capturedImage ? 'camera-preview' : 'upload-preview')}
+                          className="mt-6 text-[11px] font-bold underline cursor-pointer"
+                        >
+                          前へ戻ってやり直す
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -986,7 +1043,7 @@ export default function VirtualTryOnModal({
                 <div className="w-[240px]">
                   <div className="w-full h-[5px] bg-gray-200 rounded-full overflow-hidden mb-6">
                     <div
-                      className="h-full bg-gap-navy transition-all duration-150 ease-out"
+                      className="h-full bg-gap-navy transition-all duration-300 ease-out"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -994,8 +1051,19 @@ export default function VirtualTryOnModal({
                     {progress}%
                   </span>
                 </div>
-              </div>
 
+                {generationError && (
+                  <div className="mt-12 p-8 bg-red-50 border border-red-200 rounded text-red-600 text-[11px]">
+                    <p>{generationError}</p>
+                    <button
+                      onClick={() => setStep(capturedImage ? 'camera-preview' : 'upload-preview')}
+                      className="mt-4 underline font-bold cursor-pointer"
+                    >
+                      戻る
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1004,17 +1072,12 @@ export default function VirtualTryOnModal({
              ------------------------------------------------------- */}
           {step === 'result' && (
             <div className="w-full">
-              
-              {/* デスクトップ表示 */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px] text-left">
                 <div className="relative w-[240px] h-[360px] rounded-[3px] overflow-hidden shadow-xl border border-gray-200 bg-gray-50 flex-shrink-0">
                   <img
-                    src="/images/virtual-try-on/result-demo.jpg"
+                    src={generatedImageUrl || '/images/virtual-try-on/result-demo.jpg'}
                     alt="試着結果"
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
-                    }}
                   />
                 </div>
 
@@ -1061,8 +1124,8 @@ export default function VirtualTryOnModal({
                       </button>
 
                       <a
-                        href="/images/virtual-try-on/result-demo.jpg"
-                        download="gap-virtual-tryon.jpg"
+                        href={generatedImageUrl || '/images/virtual-try-on/result-demo.jpg'}
+                        download="gap-virtual-tryon.png"
                         className="h-[36px] border border-gray-300 rounded-full font-bold text-[11px] text-gray-700 hover:border-black flex items-center justify-center gap-4 transition-colors cursor-pointer"
                       >
                         <Download size={12} />
@@ -1137,12 +1200,9 @@ export default function VirtualTryOnModal({
 
                 <div className="relative w-[200px] h-[300px] rounded-[3px] overflow-hidden shadow-xl border border-gray-200 bg-gray-50 flex-shrink-0 mb-14">
                   <img
-                    src="/images/virtual-try-on/result-demo.jpg"
+                    src={generatedImageUrl || '/images/virtual-try-on/result-demo.jpg'}
                     alt="試着結果"
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80';
-                    }}
                   />
                 </div>
 
@@ -1168,8 +1228,8 @@ export default function VirtualTryOnModal({
                     </button>
 
                     <a
-                      href="/images/virtual-try-on/result-demo.jpg"
-                      download="gap-virtual-tryon.jpg"
+                      href={generatedImageUrl || '/images/virtual-try-on/result-demo.jpg'}
+                      download="gap-virtual-tryon.png"
                       className="h-[36px] border border-gray-300 rounded-full font-bold text-[11px] text-gray-700 hover:border-black flex items-center justify-center gap-4 transition-colors cursor-pointer"
                     >
                       <Download size={12} />
