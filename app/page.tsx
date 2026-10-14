@@ -1,6 +1,7 @@
 // app/page.tsx
 'use client';
 
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -134,7 +135,7 @@ export default function Home() {
       <Header isHome={true} />
 
       <main className="w-full">
-        {/* 1. Main Hero section */}
+        {/* 1. Main Hero section (CTAボタンからPLPへ遷移) */}
         <section className="relative w-full h-screen min-h-[500px] bg-black overflow-hidden flex items-end pb-32 md:pb-48">
           <video 
             autoPlay 
@@ -174,18 +175,18 @@ export default function Home() {
               </p>
 
               <div>
-                <a 
-                  href="#" 
+                <Link 
+                  href="/products" 
                   className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-14 px-16 py-6 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
                 >
                   コレクションをチェック
-                </a>
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 2. Sub Hero section */}
+        {/* 2. Sub Hero section (MEN'S MODERN DENIM CTAボタンからPLPへ遷移) */}
         <section className="w-full grid grid-cols-1 md:grid-cols-2">
           <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-[24px] lg:px-24 pb-24 md:pb-32">
             <video 
@@ -231,12 +232,12 @@ export default function Home() {
               <h2 className="text-28 md:text-35 font-bold mb-8">MEN'S MODERN DENIM</h2>
               <p className="text-14 md:text-16 mb-12 opacity-90">上質なファブリックと多様なシルエットのメンズデニム</p>
               <div>
-                <a 
-                  href="#" 
+                <Link 
+                  href="/products" 
                   className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-14 px-16 py-6 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
                 >
                   メンズをショップ
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -247,29 +248,27 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-24 gap-4 md:gap-0">
             <div>
               <h2 className="text-24 md:text-28 font-bold text-gap-dark">SHOP NOW</h2>
-              {/* モバイル時：見出しの下に「全て見る」を配置 */}
-              <a href="#" className="md:hidden text-13 font-bold text-gap-dark hover:text-gap-navy mt-4 inline-block">
+              <Link href="/products" className="md:hidden text-13 font-bold text-gap-dark hover:text-gap-navy mt-4 inline-block">
                 全て見る →
-              </a>
+              </Link>
             </div>
             
-            {/* PC時：見出しの右側に配置（モバイル時は非表示） */}
             <div className="hidden md:flex items-center gap-16">
-              <a href="#" className="text-13 font-bold text-gap-dark hover:text-gap-navy">
+              <Link href="/products" className="text-13 font-bold text-gap-dark hover:text-gap-navy">
                 全て見る →
-              </a>
+              </Link>
               <div className="flex gap-8">
-                <button className="p-8 border border-gap-border-dark rounded-full hover:bg-gap-gray" aria-label="前へ">
+                <button className="p-8 border border-gap-border-dark rounded-full hover:bg-gap-gray cursor-pointer" aria-label="前へ">
                   <ChevronLeft size={18} />
                 </button>
-                <button className="p-8 border border-gap-border-dark rounded-full hover:bg-gap-gray" aria-label="次へ">
+                <button className="p-8 border border-gap-border-dark rounded-full hover:bg-gap-gray cursor-pointer" aria-label="次へ">
                   <ChevronRight size={18} />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-16 md:gap-24 overflow-x-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-[24px] gap-y-[28px] md:gap-x-[24px] md:gap-y-40 overflow-x-auto">
             {shopProducts.map((product) => (
               <a 
                 key={product.id} 
@@ -317,7 +316,7 @@ export default function Home() {
 
         {/* 4. Promotional Banner section */}
         <section className="max-w-[1600px] mx-auto px-[24px] lg:px-24">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-[24px] gap-y-[28px] md:gap-x-[24px] md:gap-y-40">
             {promoBanners.map((banner, index) => (
               <div key={index} className="relative aspect-[2/3] bg-gap-gray overflow-hidden border border-gap-border group cursor-pointer">
                 <img 
@@ -337,19 +336,19 @@ export default function Home() {
                   <p className="text-12 md:text-13 mb-12 opacity-90">
                     {banner.subtitle}
                   </p>
-                  <a 
-                    href="#" 
+                  <Link 
+                    href="/products" 
                     className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-12 px-14 py-4 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
                   >
                     詳しく見る
-                  </a>
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* 5. SEO & Navigation List Section */}
+        {/* 5. SEO & Navigation List Section (各カテゴリーアイコンからPLPへ遷移) */}
         <section className="bg-white pt-[100px] pb-48 md:pb-64">
           <div className="max-w-[1200px] mx-auto px-[24px] lg:px-24">
             <div className="text-center mb-20 md:mb-28">
@@ -362,12 +361,13 @@ export default function Home() {
               </p>
             </div>
 
+            {/* 6つのカテゴリーアイコン全てに /products への導線を設定 */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-16 md:gap-24 mb-24 md:mb-32 text-center">
               {essentialCategories.map((cat, idx) => (
-                <a 
+                <Link 
                   key={idx} 
-                  href="#" 
-                  className="group flex flex-col items-center justify-center p-8 rounded-lg hover:bg-gap-gray transition-colors"
+                  href="/products" 
+                  className="group flex flex-col items-center justify-center p-8 rounded-lg hover:bg-gap-gray transition-colors cursor-pointer"
                 >
                   <div className="w-80 h-80 md:w-[120px] md:h-[120px] flex items-center justify-center mb-8 overflow-hidden">
                     <img 
@@ -382,7 +382,7 @@ export default function Home() {
                   <span className="text-13 font-bold text-gap-dark group-hover:text-gap-navy">
                     {cat.name}
                   </span>
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -395,12 +395,12 @@ export default function Home() {
                   <ul className="space-y-10">
                     {col.links.map((link, lIdx) => (
                       <li key={lIdx}>
-                        <a 
-                          href="#" 
+                        <Link 
+                          href="/products" 
                           className="text-13 text-gap-muted hover:text-gap-dark transition-colors"
                         >
                           {link}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>

@@ -146,7 +146,6 @@ const completeTheLookBundles = [
   {
     id: 'bundle-1',
     title: '90s ストリートカジュアル',
-    // 01: 5枚構成（中央、右上、右下、左下、左上）
     items: [
       {
         name: 'リラックス GAPロゴ ジップパーカー (当商品)',
@@ -193,7 +192,6 @@ const completeTheLookBundles = [
   {
     id: 'bundle-2',
     title: 'アーバン スポーツスタイル',
-    // 02: 4枚構成（中央、中央上部、右下、左下）
     items: [
       {
         name: 'リラックス GAPロゴ ジップパーカー (当商品)',
@@ -232,7 +230,6 @@ const completeTheLookBundles = [
   {
     id: 'bundle-3',
     title: 'アイコニック レイヤード',
-    // 03: 3枚構成（中央、左上、右下）
     items: [
       {
         name: 'アイコニック デニムジャケット',
@@ -784,7 +781,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* =========================================================
-           2. みんなのGAPコーディネートをチェック
+           2. みんなのGAPコーディネートをチェック (GAP 24px化)
            ========================================================= */}
         <section className="mt-32 pt-20 border-t border-gap-border">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-16 mb-20">
@@ -825,12 +822,12 @@ export default function ProductDetailPage() {
 
           <div 
             ref={coordScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
+            className="flex gap-[24px] overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {coordinateItems.map((item) => (
               <div 
                 key={item.id} 
-                className="w-[72vw] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col"
+                className="w-[72vw] sm:w-[320px] md:w-[calc((100%-48px)/3)] flex-shrink-0 snap-start flex flex-col"
               >
                 <div className="relative aspect-square bg-gap-gray overflow-hidden rounded-[4px] group">
                   <img
@@ -861,7 +858,7 @@ export default function ProductDetailPage() {
               </div>
             ))}
 
-            <div className="w-[72vw] sm:w-[320px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start flex flex-col">
+            <div className="w-[72vw] sm:w-[320px] md:w-[calc((100%-48px)/3)] flex-shrink-0 snap-start flex flex-col">
               <div className="aspect-square bg-[#f6f6f6] rounded-[4px] border border-dashed border-gray-300 flex flex-col items-center justify-center p-24 text-center">
                 <p className="text-[14px] md:text-[15px] font-bold text-gap-dark leading-relaxed mb-16">
                   いち早く素敵なコーディネートを<br />シェアしよう
@@ -879,7 +876,7 @@ export default function ProductDetailPage() {
         </section>
 
         {/* =========================================================
-           3. あなただけのGAPスタイルを完成させよう
+           3. あなただけのGAPスタイルを完成させよう (GAP 24px化)
            ========================================================= */}
         <section className="mt-32 pt-20 border-t border-gap-border">
           <div className="flex justify-between items-center mb-20">
@@ -907,12 +904,12 @@ export default function ProductDetailPage() {
 
           <div 
             ref={bundleScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
+            className="flex gap-[24px] overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {completeTheLookBundles.map((bundle) => (
               <div 
                 key={bundle.id}
-                className="w-[78vw] sm:w-[360px] md:w-[calc(33.333%-11px)] flex-shrink-0 snap-start"
+                className="w-[78vw] sm:w-[360px] md:w-[calc((100%-48px)/3)] flex-shrink-0 snap-start"
               >
                 <div className="relative aspect-[3/4] bg-[#f1f1f1] rounded-[4px] overflow-hidden group/card select-none">
                   <div className="absolute inset-0">
@@ -975,7 +972,7 @@ export default function ProductDetailPage() {
         </section>
 
         {/* =========================================================
-           4. 他のおすすめセクション
+           4. 他のおすすめセクション (GAP 24px化)
            ========================================================= */}
         <section className="mt-32 pt-20 border-t border-gap-border">
           <div className="flex justify-between items-center mb-20">
@@ -1001,12 +998,12 @@ export default function ProductDetailPage() {
 
           <div 
             ref={recomScrollRef}
-            className="flex gap-16 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
+            className="flex gap-[24px] overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory -mr-[24px] pr-[24px] md:mr-0 md:pr-0"
           >
             {recommendationProducts.map((item) => (
               <div 
                 key={item.id} 
-                className="w-[58vw] sm:w-[240px] md:w-[calc(25%-12px)] flex-shrink-0 snap-start flex flex-col"
+                className="w-[58vw] sm:w-[240px] md:w-[calc((100%-72px)/4)] flex-shrink-0 snap-start flex flex-col"
               >
                 <Link href="#" className="group flex flex-col">
                   <div className="aspect-[4/5] bg-white border border-gap-border rounded-[4px] overflow-hidden mb-12 flex items-center justify-center">
