@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VirtualTryOnModal from '@/components/VirtualTryOnModal';
 import { 
   Heart, 
   MapPin, 
@@ -22,7 +23,8 @@ import {
   Sparkles,
   Camera,
   Search as SearchIcon,
-  Eye
+  Eye,
+  Info
 } from 'lucide-react';
 
 const productData = {
@@ -305,6 +307,11 @@ export default function ProductDetailPage() {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // ヴァーチャル試着モーダル ＆ Tooltipステート
+  const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+  const [showPurchaseTooltip, setShowPurchaseTooltip] = useState(false);
+  const sizeSectionRef = useRef<HTMLDivElement>(null);
+
   const coordScrollRef = useRef<HTMLDivElement>(null);
   const bundleScrollRef = useRef<HTMLDivElement>(null);
   const recomScrollRef = useRef<HTMLDivElement>(null);
@@ -342,6 +349,18 @@ export default function ProductDetailPage() {
 
   const handleNextImage = () => {
     setSelectedImageIndex((prev) => (prev === currentImages.length - 1 ? 0 : prev + 1));
+  };
+
+  // 試着モーダルで「購入する」が押された時の処理
+  const handleProceedToPurchase = () => {
+    setShowPurchaseTooltip(true);
+    if (sizeSectionRef.current) {
+      sizeSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // 7秒後に自動フェードアウト
+    setTimeout(() => {
+      setShowPurchaseTooltip(false);
+    }, 7000);
   };
 
   return (
@@ -467,7 +486,7 @@ export default function ProductDetailPage() {
                       setSelectedColorIndex(idx);
                       setSelectedImageIndex(0);
                     }}
-                    className={`relative w-[64px] aspect-[4/5] border-2 rounded-sm overflow-hidden bg-white transition-all ${
+                    className={`relative w-[64px] aspect-[4/5] border-2 rounded-sm overflow-hidden bg-white transition-all cursor-pointer ${
                       selectedColorIndex === idx ? 'border-black' : 'border-transparent hover:border-gap-border-dark'
                     }`}
                     title={color.name}
@@ -485,13 +504,23 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* サイズ選択 */}
-            <div>
+            {/* サイズ選択 (Tooltip連動 Ref を配置) */}
+            <div ref={sizeSectionRef} className="relative">
+              
+              {/* 試着後購入誘導 Tooltip */}
+              {showPurchaseTooltip && (
+                <div className="absolute -top-40 left-0 z-30 flex items-center gap-8 bg-gap-navy text-white text-[12px] font-bold px-14 py-8 rounded-[4px] shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <Info size={16} className="text-blue-300 flex-shrink-0" />
+                  <span>サイズと数量を選択して、カートへお進みください</span>
+                  <div className="absolute top-full left-24 -mt-[1px] border-solid border-t-gap-navy border-t-8 border-x-transparent border-x-8 border-b-0 w-0 h-0" />
+                </div>
+              )}
+
               <div className="flex justify-between items-center mb-10 text-13">
                 <span className="font-bold">サイズを選択</span>
                 <button 
                   onClick={() => setIsSizeGuideOpen(true)}
-                  className="flex items-center gap-4 text-gap-muted hover:text-black transition-colors underline"
+                  className="flex items-center gap-4 text-gap-muted hover:text-black transition-colors underline cursor-pointer"
                 >
                   <Ruler size={14} />
                   <span>サイズ確認する</span>
@@ -505,8 +534,13 @@ export default function ProductDetailPage() {
                     <button
                       key={sz}
                       disabled={!isAvailable}
-                      onClick={() => isAvailable && setSelectedSize(sz)}
-                      className={`relative py-6 px-12 border text-13 font-bold rounded-sm transition-all overflow-hidden flex items-center justify-center ${
+                      onClick={() => {
+                        if (isAvailable) {
+                          setSelectedSize(sz);
+                          setShowPurchaseTooltip(false);
+                        }
+                      }}
+                      className={`relative py-6 px-12 border text-13 font-bold rounded-sm transition-all overflow-hidden flex items-center justify-center cursor-pointer ${
                         !isAvailable
                           ? 'bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed select-none'
                           : selectedSize === sz 
@@ -533,7 +567,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* ヴァーチャル試着 UI */}
+            {/* ヴァーチャル試着 UI (クリックでモーダル起動) */}
             <div className="flex items-center justify-between py-6 my-1">
               <div className="flex items-center gap-10">
                 <div className="hidden sm:flex items-center flex-shrink-0">
@@ -559,7 +593,8 @@ export default function ProductDetailPage() {
 
               <button 
                 type="button"
-                className="font-bold text-[13px] text-gap-dark hover:text-gap-navy flex items-center gap-4 hover:underline transition-colors whitespace-nowrap"
+                onClick={() => setIsTryOnOpen(true)}
+                className="font-bold text-[13px] text-gap-dark hover:text-gap-navy flex items-center gap-4 hover:underline transition-colors whitespace-nowrap cursor-pointer"
               >
                 <Sparkles size={16} />
                 <span>ヴァーチャル試着する</span>
@@ -575,7 +610,7 @@ export default function ProductDetailPage() {
                     onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                     disabled={quantity <= 1}
                     aria-label="数量を減らす"
-                    className="text-gray-600 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                    className="text-gray-600 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-opacity cursor-pointer"
                   >
                     <Minus size={18} />
                   </button>
@@ -585,7 +620,7 @@ export default function ProductDetailPage() {
                   <button
                     onClick={() => setQuantity((prev) => prev + 1)}
                     aria-label="数量を増やす"
-                    className="text-gray-600 hover:text-black transition-opacity"
+                    className="text-gray-600 hover:text-black transition-opacity cursor-pointer"
                   >
                     <Plus size={18} />
                   </button>
@@ -593,7 +628,7 @@ export default function ProductDetailPage() {
 
                 <button 
                   disabled={!selectedSize}
-                  className="flex-1 bg-gap-navy text-white rounded-full h-[52px] font-bold text-[16px] hover:bg-[#001b3d] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center tracking-wider"
+                  className="flex-1 bg-gap-navy text-white rounded-full h-[52px] font-bold text-[16px] hover:bg-[#001b3d] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center tracking-wider cursor-pointer"
                 >
                   カートに入れる
                 </button>
@@ -603,7 +638,7 @@ export default function ProductDetailPage() {
                 <span className="text-gray-600">在庫あり</span>
                 <button 
                   type="button"
-                  className="font-bold text-gap-dark hover:text-gap-navy hover:underline flex items-center gap-4 transition-colors"
+                  className="font-bold text-gap-dark hover:text-gap-navy hover:underline flex items-center gap-4 transition-colors cursor-pointer"
                 >
                   <MapPin size={14} />
                   <span>店舗の在庫を確認する</span>
@@ -613,14 +648,14 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-12">
                 <button
                   aria-label="共有する"
-                  className="w-[48px] h-[48px] rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:border-black hover:text-black transition-colors flex-shrink-0"
+                  className="w-[48px] h-[48px] rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:border-black hover:text-black transition-colors flex-shrink-0 cursor-pointer"
                 >
                   <Share2 size={18} />
                 </button>
 
                 <button
                   onClick={() => setIsFavorite(!isFavorite)}
-                  className={`flex-1 h-[48px] rounded-full border flex items-center justify-center gap-8 text-[14px] font-normal transition-colors ${
+                  className={`flex-1 h-[48px] rounded-full border flex items-center justify-center gap-8 text-[14px] font-normal transition-colors cursor-pointer ${
                     isFavorite 
                       ? 'border-gap-red text-gap-red bg-red-50' 
                       : 'border-gray-300 hover:border-black text-gray-800'
@@ -637,7 +672,7 @@ export default function ProductDetailPage() {
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('overview')} 
-                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark"
+                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark cursor-pointer"
                 >
                   <span>商品概要</span>
                   {openAccordion.overview ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -655,7 +690,7 @@ export default function ProductDetailPage() {
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('sizeFit')} 
-                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark"
+                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark cursor-pointer"
                 >
                   <span>サイズ・フィット感</span>
                   {openAccordion.sizeFit ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -699,7 +734,7 @@ export default function ProductDetailPage() {
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('material')} 
-                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark"
+                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark cursor-pointer"
                 >
                   <span>素材・お手入れ</span>
                   {openAccordion.material ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -716,7 +751,7 @@ export default function ProductDetailPage() {
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('reviews')} 
-                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark"
+                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark cursor-pointer"
                 >
                   <div className="flex items-center gap-8">
                     <span>レビュー (12)</span>
@@ -739,7 +774,7 @@ export default function ProductDetailPage() {
                         生地がとても柔らかく、リラックス感のあるシルエットが気に入っています。タイムズスクエアのロゴも存在感があってかっこいいです。
                       </p>
                     </div>
-                    <button className="w-full border border-gap-border-dark py-10 font-bold text-12 text-gap-dark hover:bg-gap-gray">
+                    <button className="w-full border border-gap-border-dark py-10 font-bold text-12 text-gap-dark hover:bg-gap-gray cursor-pointer">
                       レビューを書く
                     </button>
                   </div>
@@ -749,7 +784,7 @@ export default function ProductDetailPage() {
               <div className="py-14">
                 <button 
                   onClick={() => toggleAccordion('shipping')} 
-                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark"
+                  className="w-full flex justify-between items-center text-[16px] font-bold text-gap-dark cursor-pointer"
                 >
                   <span>配送・交換・返品について</span>
                   {openAccordion.shipping ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -781,7 +816,7 @@ export default function ProductDetailPage() {
               
               <button 
                 type="button"
-                className="mt-12 w-full md:w-auto inline-flex items-center justify-center gap-6 px-16 py-8 border border-gap-border-dark rounded-full text-12 font-bold text-gap-dark hover:bg-black hover:text-white transition-colors"
+                className="mt-12 w-full md:w-auto inline-flex items-center justify-center gap-6 px-16 py-8 border border-gap-border-dark rounded-full text-12 font-bold text-gap-dark hover:bg-black hover:text-white transition-colors cursor-pointer"
               >
                 <Camera size={16} />
                 <span>写真をアップロード</span>
@@ -792,14 +827,14 @@ export default function ProductDetailPage() {
               <button 
                 onClick={() => scrollContainer(coordScrollRef, 'left')}
                 aria-label="前へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronLeft size={20} />
               </button>
               <button 
                 onClick={() => scrollContainer(coordScrollRef, 'right')}
                 aria-label="次へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronRight size={20} />
               </button>
@@ -852,7 +887,7 @@ export default function ProductDetailPage() {
                 <button 
                   type="button"
                   aria-label="写真をシェアする"
-                  className="w-[48px] h-[48px] rounded-full bg-black text-white flex items-center justify-center hover:scale-110 transition-transform shadow-md"
+                  className="w-[48px] h-[48px] rounded-full bg-black text-white flex items-center justify-center hover:scale-110 transition-transform shadow-md cursor-pointer"
                 >
                   <Plus size={22} />
                 </button>
@@ -874,14 +909,14 @@ export default function ProductDetailPage() {
               <button 
                 onClick={() => scrollContainer(bundleScrollRef, 'left')}
                 aria-label="前へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronLeft size={20} />
               </button>
               <button 
                 onClick={() => scrollContainer(bundleScrollRef, 'right')}
                 aria-label="次へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronRight size={20} />
               </button>
@@ -922,7 +957,7 @@ export default function ProductDetailPage() {
                           <button 
                             type="button"
                             aria-label={`${item.name}のピン`}
-                            className="w-20 h-20 rounded-full border-2 border-gray-400 bg-white/70 shadow-sm flex items-center justify-center hover:scale-125 transition-transform"
+                            className="w-20 h-20 rounded-full border-2 border-gray-400 bg-white/70 shadow-sm flex items-center justify-center hover:scale-125 transition-transform cursor-pointer"
                           />
 
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-8 hidden group-hover/pin:flex flex-col bg-white p-10 shadow-xl border border-gap-border rounded-[4px] w-[180px] z-30 pointer-events-auto">
@@ -941,7 +976,7 @@ export default function ProductDetailPage() {
                   <div className="absolute left-14 bottom-14 z-20">
                     <button 
                       type="button"
-                      className="bg-white/95 hover:bg-white text-black text-12 font-bold rounded-full px-12 py-6 shadow-sm border border-gray-200 flex items-center gap-6 transition-all"
+                      className="bg-white/95 hover:bg-white text-black text-12 font-bold rounded-full px-12 py-6 shadow-sm border border-gray-200 flex items-center gap-6 transition-all cursor-pointer"
                     >
                       <Eye size={16} />
                       <span className="hidden sm:inline">コーデ全体を見る</span>
@@ -968,14 +1003,14 @@ export default function ProductDetailPage() {
               <button 
                 onClick={() => scrollContainer(recomScrollRef, 'left')}
                 aria-label="前へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronLeft size={20} />
               </button>
               <button 
                 onClick={() => scrollContainer(recomScrollRef, 'right')}
                 aria-label="次へ" 
-                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors"
+                className="w-[48px] h-[48px] border border-gap-border flex items-center justify-center rounded-full hover:bg-gap-gray transition-colors cursor-pointer"
               >
                 <ChevronRight size={20} />
               </button>
@@ -1015,13 +1050,28 @@ export default function ProductDetailPage() {
 
       </main>
 
+      {/* ヴァーチャル試着モーダル */}
+      <VirtualTryOnModal
+        isOpen={isTryOnOpen}
+        onClose={() => setIsTryOnOpen(false)}
+        product={{
+          id: productData.id,
+          name: productData.name,
+          price: productData.price,
+          category: productData.category,
+          colors: productData.colors
+        }}
+        initialColorIndex={selectedColorIndex}
+        onProceedToPurchase={handleProceedToPurchase}
+      />
+
       {/* サイズガイド モーダル */}
       {isSizeGuideOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-16">
           <div className="bg-white max-w-[640px] w-full p-24 rounded-sm shadow-2xl relative">
             <button 
               onClick={() => setIsSizeGuideOpen(false)}
-              className="absolute right-16 top-16 text-gap-muted hover:text-black font-bold text-18"
+              className="absolute right-16 top-16 text-gap-muted hover:text-black font-bold text-18 cursor-pointer"
             >
               ✕
             </button>
