@@ -1,6 +1,7 @@
 // components/Header.tsx
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Header01 from './Header01';
 import Header02 from './Header02';
@@ -10,12 +11,11 @@ interface HeaderProps {
   isHome?: boolean;
 }
 
-export default function Header({ isHome = false }: HeaderProps) {
+function HeaderSwitcher({ isHome = false }: HeaderProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
 
-  // クエリパラメータ (?v=1, 2, 3) またはパス (/v2, /v3) からバージョンを判定
   let version = 1;
   const vParam = searchParams.get('v');
   
@@ -25,7 +25,6 @@ export default function Header({ isHome = false }: HeaderProps) {
     version = 3;
   }
 
-  // プレゼン用: トグルボタンを押すたびに 1 → 2 → 3 → 1 と切り替える
   const toggleVersion = () => {
     const params = new URLSearchParams(searchParams.toString());
     const nextVersion = version === 3 ? 1 : version + 1;
@@ -42,12 +41,10 @@ export default function Header({ isHome = false }: HeaderProps) {
 
   return (
     <>
-      {/* バージョンに応じたヘッダーの出し分け（isHomeを渡す） */}
       {version === 1 && <Header01 isHome={isHome} />}
       {version === 2 && <Header02 isHome={isHome} />}
       {version === 3 && <Header03 isHome={isHome} />}
 
-      {/* プレゼン用: 画面右下に小さく浮く切り替えトグルボタン */}
       <div className="fixed bottom-16 right-16 z-50">
         <button
           onClick={toggleVersion}
@@ -63,5 +60,14 @@ export default function Header({ isHome = false }: HeaderProps) {
         </button>
       </div>
     </>
+  );
+}
+
+// Suspense で囲むことで Next.js のビルド時 prerender エラーを完全に防止
+export default function Header(props: HeaderProps) {
+  return (
+    <Suspense fallback={<Header01 isHome={props.isHome} />}>
+      <HeaderSwitcher {...props} />
+    </Suspense>
   );
 }
