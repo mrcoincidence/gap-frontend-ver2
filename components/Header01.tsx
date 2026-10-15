@@ -26,7 +26,7 @@ export default function Header01({ isHome = false }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
-  // モバイルメニューの階層管理 (1: トップ, 2: サブカテゴリー, 3: 下層メニュー)
+  // モバイルメニュー階層管理 (1: トップ, 2: サブカテゴリー, 3: 下層メニュー)
   const [menuLevel, setMenuLevel] = useState<1 | 2 | 3>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('メンズ');
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>('カテゴリー');
@@ -75,7 +75,8 @@ export default function Header01({ isHome = false }: HeaderProps) {
 
   const categories = ['メンズ', 'ウィメンズ', 'キッズ', 'ベビー', 'GapX'];
 
-  const isTransparent = isHome && !isScrolled;
+  // メガメニューが開いている時（activeMenuがある時）は透過を解除して白にする
+  const isTransparent = isHome && !isScrolled && !activeMenu;
   const navTextColor = !isTransparent ? 'text-gap-dark hover:text-gap-navy' : 'text-white hover:opacity-80';
   const logoFill = !isTransparent ? '#001b3d' : '#ffffff';
 
@@ -124,7 +125,6 @@ export default function Header01({ isHome = false }: HeaderProps) {
 
   const currentSubCategoryObj = subCategoryList.find(sub => sub.title === selectedSubCategory) || megaMenuData.categories;
 
-  // モバイルメニューを閉じる
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
     setTimeout(() => {
@@ -196,13 +196,13 @@ export default function Header01({ isHome = false }: HeaderProps) {
         </div>
       </div>
 
-      {/* 2. Main Bar */}
+      {/* 2. Main Bar: メガメニュー展開時は白背景になり、レイアウトシフトなしで自然に接続 */}
       <div 
         onMouseLeave={() => setActiveMenu(null)}
-        className={`sticky top-0 w-full z-40 transition-all duration-200 font-sans ${
-          !isTransparent 
-            ? `bg-white ${isScrolled ? 'py-[8px]' : 'py-[12px]'}` 
-            : `bg-transparent ${isScrolled ? 'py-[8px] bg-white' : 'py-[12px] -mb-[76px] md:-mb-[86px]'}`
+        className={`sticky top-0 w-full z-40 transition-colors duration-200 font-sans ${
+          isHome && !isScrolled 
+            ? `${isTransparent ? 'bg-transparent' : 'bg-white shadow-sm'} py-[16px] -mb-[76px] md:-mb-[86px]`
+            : `bg-white ${isScrolled ? 'py-[8px] shadow-sm' : 'py-[16px]'}`
         }`}
       >
         <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24 flex items-center justify-between">
@@ -212,7 +212,7 @@ export default function Header01({ isHome = false }: HeaderProps) {
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="GAP ホーム">
               <svg 
                 className={`transition-all duration-200 w-auto ${
-                  isScrolled ? 'h-[32px]' : 'h-[42px] md:h-[50px]'
+                  isScrolled ? 'h-[32px]' : 'h-[44px] md:h-[54px]'
                 }`} 
                 viewBox="0 0 104 78" 
                 fill="none" 
@@ -226,16 +226,16 @@ export default function Header01({ isHome = false }: HeaderProps) {
           </div>
 
           {/* 中央寄せ: カテゴリーメニュー */}
-          <nav className="hidden lg:flex items-center gap-28 font-bold text-15 px-16 h-full">
+          <nav className="hidden lg:flex items-center gap-28 font-bold text-15 px-16">
             {categories.map((cat) => (
               <div
                 key={cat}
                 onMouseEnter={() => setActiveMenu(cat)}
-                className="relative py-10 cursor-pointer flex items-center"
+                className="relative py-2 cursor-pointer flex items-center"
               >
                 <Link 
                   href="/products" 
-                  className={`transition-colors flex items-center ${navTextColor} ${
+                  className={`transition-colors py-1 flex items-center ${navTextColor} ${
                     activeMenu === cat ? '!text-gap-navy underline decoration-2 underline-offset-8' : ''
                   }`}
                 >
@@ -295,7 +295,7 @@ export default function Header01({ isHome = false }: HeaderProps) {
             onMouseLeave={() => setActiveMenu(null)}
             className="hidden lg:block absolute top-full left-0 w-full bg-white shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150"
           >
-            <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24 pt-10 pb-16">
+            <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24 pt-12 pb-16">
               <div className="grid grid-cols-6 gap-14 items-start">
                 
                 {/* 1カラム目: プロモーション画像エリア (2:3 比率) */}
@@ -430,7 +430,6 @@ export default function Header01({ isHome = false }: HeaderProps) {
       {/* =========================================================
          5. モバイル ドロワー
          ========================================================= */}
-      {/* 背景オーバーレイ */}
       <div 
         onClick={closeMobileMenu}
         className={`lg:hidden fixed inset-0 bg-black/60 z-50 transition-opacity duration-300 ease-in-out ${
@@ -438,14 +437,13 @@ export default function Header01({ isHome = false }: HeaderProps) {
         }`}
       />
 
-      {/* ドロワー本体 */}
       <div 
         className={`lg:hidden fixed top-0 right-0 bottom-0 w-[88%] max-w-[380px] bg-white z-50 flex flex-col font-sans select-none shadow-2xl transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         
-        {/* ドロワー最上部バー: mr-[2px] で「＞」アイコンの描画右端と完全に合致 */}
+        {/* ドロワー最上部バー */}
         <div className="h-[64px] px-[36px] flex items-center justify-between flex-shrink-0 pt-4">
           <div>
             {menuLevel === 2 && (
@@ -486,12 +484,9 @@ export default function Header01({ isHome = false }: HeaderProps) {
             }}
           >
 
-            {/* ---------------------------------------------------
-               LEVEL 1: トップレベル
-               --------------------------------------------------- */}
+            {/* LEVEL 1: トップレベル */}
             <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
               
-              {/* 1. トップカテゴリー一覧 */}
               <div className="space-y-1">
                 {categories.map((cat) => (
                   <button
@@ -508,7 +503,6 @@ export default function Header01({ isHome = false }: HeaderProps) {
                 ))}
               </div>
 
-              {/* 2. ログイン・会員登録への誘導 (登録する: GAP NAVY) */}
               <div className="pt-16 border-t border-gray-100 my-12">
                 <p className="text-[13px] text-gray-600 mb-12 leading-relaxed font-medium">
                   最新のコレクションや会員限定のオファーをお届けします。
@@ -529,7 +523,6 @@ export default function Header01({ isHome = false }: HeaderProps) {
                 </div>
               </div>
 
-              {/* 3. ユーティリティメニュー (ヘルプ・カート・店舗検索) */}
               <div className="pt-12 border-t border-gray-100 pb-8 space-y-10">
                 <Link
                   href="#"
@@ -561,9 +554,7 @@ export default function Header01({ isHome = false }: HeaderProps) {
 
             </div>
 
-            {/* ---------------------------------------------------
-               LEVEL 2: 中カテゴリー
-               --------------------------------------------------- */}
+            {/* LEVEL 2: 中カテゴリー */}
             <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
               <div>
                 <h2 className="text-[22px] font-bold text-gap-dark mb-12">
@@ -596,9 +587,7 @@ export default function Header01({ isHome = false }: HeaderProps) {
               </div>
             </div>
 
-            {/* ---------------------------------------------------
-               LEVEL 3: 最下層リンク一覧
-               --------------------------------------------------- */}
+            {/* LEVEL 3: 最下層リンク一覧 */}
             <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
               <div>
                 <h2 className="text-[22px] font-bold text-gap-dark mb-12">

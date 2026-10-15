@@ -1,4 +1,4 @@
-// components/Header.tsx
+// components/Header02.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +17,11 @@ import {
   User
 } from 'lucide-react';
 
-export default function Header() {
+interface HeaderProps {
+  isHome?: boolean;
+}
+
+export default function Header02({ isHome = false }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 

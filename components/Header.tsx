@@ -6,7 +6,11 @@ import Header01 from './Header01';
 import Header02 from './Header02';
 import Header03 from './Header03';
 
-export default function Header() {
+interface HeaderProps {
+  isHome?: boolean;
+}
+
+export default function Header({ isHome = false }: HeaderProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -27,7 +31,7 @@ export default function Header() {
     const nextVersion = version === 3 ? 1 : version + 1;
     
     if (nextVersion === 1) {
-      params.delete('v'); // 1の場合はパラメータを消してスッキリさせる
+      params.delete('v');
     } else {
       params.set('v', nextVersion.toString());
     }
@@ -38,10 +42,10 @@ export default function Header() {
 
   return (
     <>
-      {/* バージョンに応じたヘッダーの出し分け */}
-      {version === 1 && <Header01 />}
-      {version === 2 && <Header02 />}
-      {version === 3 && <Header03 />}
+      {/* バージョンに応じたヘッダーの出し分け（isHomeを渡す） */}
+      {version === 1 && <Header01 isHome={isHome} />}
+      {version === 2 && <Header02 isHome={isHome} />}
+      {version === 3 && <Header03 isHome={isHome} />}
 
       {/* プレゼン用: 画面右下に小さく浮く切り替えトグルボタン */}
       <div className="fixed bottom-16 right-16 z-50">
