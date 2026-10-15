@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VirtualTryOnModal from '@/components/VirtualTryOnModal'; // モーダルコンポーネントをインポート
 import { 
   Heart, 
   MapPin, 
@@ -299,6 +300,9 @@ export default function ProductDetailPage() {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // ヴァーチャル試着モーダル用の状態
+  const [isTryOnOpen, setIsTryOnOpen] = useState(false);
+
   const coordScrollRef = useRef<HTMLDivElement>(null);
   const bundleScrollRef = useRef<HTMLDivElement>(null);
   const recomScrollRef = useRef<HTMLDivElement>(null);
@@ -336,6 +340,17 @@ export default function ProductDetailPage() {
 
   const handleNextImage = () => {
     setSelectedImageIndex((prev) => (prev === currentImages.length - 1 ? 0 : prev + 1));
+  };
+
+  // モーダルを開く処理
+  const handleOpenTryOn = () => {
+    setIsTryOnOpen(true);
+  };
+
+  // モーダル内で「カートに入れる（購入する）」が押されたときの処理
+  const handleProceedToPurchase = () => {
+    // 実際の運用ではここでカート追加処理などを呼び出す
+    setIsTryOnOpen(false);
   };
 
   return (
@@ -553,6 +568,7 @@ export default function ProductDetailPage() {
 
               <button 
                 type="button"
+                onClick={handleOpenTryOn} // クリックイベントを追加
                 className="font-bold text-[13px] text-gap-dark hover:text-gap-navy flex items-center gap-4 hover:underline transition-colors whitespace-nowrap"
               >
                 <Sparkles size={16} />
@@ -1049,6 +1065,27 @@ export default function ProductDetailPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* ヴァーチャル試着 モーダル */}
+      {isTryOnOpen && (
+        <VirtualTryOnModal
+          isOpen={isTryOnOpen}
+          onClose={() => setIsTryOnOpen(false)}
+          product={{
+            id: productData.id,
+            name: productData.name,
+            price: productData.price,
+            category: productData.category,
+            colors: productData.colors.map((c) => ({
+              id: c.id,
+              name: c.name,
+              images: c.images
+            }))
+          }}
+          initialColorIndex={selectedColorIndex}
+          onProceedToPurchase={handleProceedToPurchase}
+        />
       )}
 
       <Footer />
