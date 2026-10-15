@@ -14,7 +14,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   Package,
-  User
+  User,
+  ArrowRight
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -24,6 +25,12 @@ interface HeaderProps {
 export default function Header02({ isHome = false }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  // モバイルメニュー階層管理 (1: トップ, 2: サブカテゴリー, 3: 下層メニュー)
+  const [menuLevel, setMenuLevel] = useState<1 | 2 | 3>(1);
+  const [selectedCategory, setSelectedCategory] = useState<string>('メンズ');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>('カテゴリー');
 
   // アナウンスバー用コンテンツ
   const announcements = [
@@ -74,7 +81,59 @@ export default function Header02({ isHome = false }: HeaderProps) {
     setAnnounceIndex((prev) => (prev === announcements.length - 1 ? 0 : prev + 1));
   };
 
-  const categories = ['メンズ', 'ウィメンズ', 'キッズ', '小物', 'GapX'];
+  const categories = ['メンズ', 'ウィメンズ', 'キッズ', 'ベビー', 'GapX'];
+
+  // メガメニュー＆モバイル共通データ定義
+  const megaMenuData = {
+    newArrivals: {
+      title: "新着商品",
+      items: ["全ての新商品", "トップス", "ボトムス", "アクセサリー"]
+    },
+    featured: {
+      title: "ピックアップ",
+      items: ["Gap Hoodie Day", "Momijiコレクション", "オンラインストア限定", "今週のベストセラー", "セール"]
+    },
+    categories: {
+      title: "カテゴリー",
+      items: [
+        "全ての新商品",
+        "Tシャツ・トップス",
+        "パーカー・スウェット上下",
+        "セットアップ",
+        "シャツ",
+        "デニム",
+        "パンツ・ボトムス",
+        "アウター・ジャケット",
+        "セーター・カーディガン",
+        "パジャマ・下着"
+      ]
+    },
+    accessories: {
+      title: "アクセサリー",
+      items: ["全ての新商品", "バッグ", "帽子・キャップ", "ベルト", "スカーフ", "靴下", "ペット"]
+    },
+    collaborations: {
+      title: "コラボレーション",
+      items: ["Gap × A.P.C.", "ONE PIECE", "ザ・シンプソンズ"]
+    }
+  };
+
+  const subCategoryList = [
+    megaMenuData.newArrivals,
+    megaMenuData.featured,
+    megaMenuData.categories,
+    megaMenuData.accessories,
+    megaMenuData.collaborations
+  ];
+
+  const currentSubCategoryObj = subCategoryList.find(sub => sub.title === selectedSubCategory) || megaMenuData.categories;
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    setTimeout(() => {
+      setMenuLevel(1);
+    }, 300);
+  };
 
   return (
     <>
@@ -127,14 +186,17 @@ export default function Header02({ isHome = false }: HeaderProps) {
       </div>
 
       {/* =========================================================
-         2. Main Bar (モバイル時ロゴ高さ48px / 右端見切れ防止調整)
+         2. Main Bar (メガメニューコンテナ兼用)
          ========================================================= */}
-      <div className={`sticky top-0 bg-white z-50 border-b border-gap-border transition-all duration-200 ${
-        isScrolled ? 'py-4 shadow-sm' : 'py-6 md:py-8'
-      }`}>
+      <div 
+        onMouseLeave={() => setActiveMenu(null)}
+        className={`sticky top-0 bg-white z-50 border-b border-gap-border transition-all duration-200 ${
+          isScrolled ? 'py-4 shadow-sm' : 'py-6 md:py-8'
+        }`}
+      >
         <div className="max-w-[1600px] mx-auto px-12 md:px-16 lg:px-24 flex items-center justify-between">
           
-          {/* 左寄せ: GAP ブラックロゴ (モバイル時 48px 指定) */}
+          {/* 左寄せ: GAP ブラックロゴ */}
           <div className="flex-shrink-0 flex items-center pr-8 md:pr-24">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="GAP ホーム">
               <svg 
@@ -153,22 +215,27 @@ export default function Header02({ isHome = false }: HeaderProps) {
           </div>
 
           {/* 中央寄せ: カテゴリーメニュー */}
-          <nav className="hidden lg:flex items-center gap-28 font-bold text-15 px-16">
+          <nav className="hidden lg:flex items-center gap-28 font-bold text-15 px-16 h-full">
             {categories.map((cat) => (
-              <Link 
-                key={cat} 
-                href="#" 
-                className="text-gap-dark hover:text-gap-navy transition-colors py-2"
+              <div
+                key={cat}
+                onMouseEnter={() => setActiveMenu(cat)}
+                className="relative py-2 cursor-pointer flex items-center"
               >
-                {cat}
-              </Link>
+                <Link 
+                  href="/products" 
+                  className={`text-gap-dark hover:text-gap-navy transition-colors py-1 flex items-center ${
+                    activeMenu === cat ? '!text-gap-navy underline decoration-2 underline-offset-8' : ''
+                  }`}
+                >
+                  {cat}
+                </Link>
+              </div>
             ))}
           </nav>
 
-          {/* 右寄せ: 検索 ＆ アイコンエリア (モバイル時の要素間隔・見切れ調整) */}
+          {/* 右寄せ: 検索 ＆ アイコンエリア */}
           <div className="flex items-center gap-2 sm:gap-6 md:gap-12 pl-0 md:pl-24 flex-shrink-0">
-            
-            {/* 検索インプット（デスクトップ） */}
             <div className="hidden md:flex items-center relative w-[160px] lg:w-[200px]">
               <input 
                 type="search" 
@@ -178,17 +245,14 @@ export default function Header02({ isHome = false }: HeaderProps) {
               <Search size={15} className="absolute right-10 text-gap-muted" />
             </div>
 
-            {/* スマホ用 検索アイコン */}
             <button className="md:hidden text-gap-dark hover:text-gap-navy p-1.5" aria-label="検索">
               <Search size={20} />
             </button>
 
-            {/* お気に入り（ハートアイコン） */}
             <Link href="#" className="text-gap-dark hover:text-gap-navy transition-colors p-1.5" aria-label="お気に入り">
               <Heart size={20} />
             </Link>
 
-            {/* カートアイコン */}
             <Link href="#" className="text-gap-dark hover:text-gap-navy transition-colors relative flex items-center justify-center p-1.5" aria-label="カート">
               <ShoppingBag size={20} />
               <span className="absolute -top-1 -right-1 bg-gap-red text-white text-[9px] font-bold rounded-full h-14 min-w-[14px] px-2 flex items-center justify-center border border-white leading-none">
@@ -196,21 +260,159 @@ export default function Header02({ isHome = false }: HeaderProps) {
               </span>
             </Link>
 
-            {/* モバイル ハンバーガーボタン (flex-shrink-0で絶対に見切れないよう固定) */}
             <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1.5 text-gap-dark hover:text-gap-navy flex-shrink-0"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-1.5 text-gap-dark hover:text-gap-navy flex-shrink-0 cursor-pointer"
               aria-label="メニュー開閉"
             >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              <Menu size={24} />
             </button>
 
           </div>
         </div>
+
+        {/* =========================================================
+           3. 6カラム メガメニュー (デスクトップ)
+           ========================================================= */}
+        {activeMenu === 'メンズ' && (
+          <div 
+            onMouseEnter={() => setActiveMenu('メンズ')}
+            onMouseLeave={() => setActiveMenu(null)}
+            className="hidden lg:block absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+          >
+            <div className="max-w-[1600px] mx-auto px-[24px] lg:px-24 pt-12 pb-16">
+              <div className="grid grid-cols-6 gap-14 items-start">
+                
+                {/* 1カラム目: プロモーション画像エリア (2:3 比率) */}
+                <div className="col-span-1">
+                  <Link href="/products" className="group block select-none">
+                    <div className="relative aspect-[2/3] w-full rounded-[2px] overflow-hidden bg-gray-100 mb-8 shadow-sm border border-gray-100">
+                      <img
+                        src="/images/products/hoodie/01/hd-01-green-1.jpg"
+                        alt="プロモーション"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80";
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 text-[13px] font-bold text-gap-dark group-hover:text-gap-navy group-hover:underline">
+                      <span>新作コレクションを見る</span>
+                      <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                </div>
+
+                {/* 2カラム目: 新着商品 */}
+                <div className="col-span-1 flex flex-col">
+                  <h3 className="text-[13px] font-bold text-gap-dark pb-4 mb-4 border-b border-gray-100 tracking-wide">
+                    {megaMenuData.newArrivals.title}
+                  </h3>
+                  <ul className="space-y-4 text-[13px]">
+                    {megaMenuData.newArrivals.items.map((item) => (
+                      <li key={item}>
+                        <Link 
+                          href="/products" 
+                          className="text-gray-600 hover:text-gap-navy hover:underline transition-colors block py-0.5"
+                        >
+                          {item}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* 3カラム目: ピックアップ */}
+                <div className="col-span-1 flex flex-col">
+                  <h3 className="text-[13px] font-bold text-gap-dark pb-4 mb-4 border-b border-gray-100 tracking-wide">
+                    {megaMenuData.featured.title}
+                  </h3>
+                  <ul className="space-y-4 text-[13px]">
+                    {megaMenuData.featured.items.map((item) => {
+                      const isSale = item === 'セール';
+                      return (
+                        <li key={item}>
+                          <Link 
+                            href="/products" 
+                            className={`transition-colors block py-0.5 ${
+                              isSale 
+                                ? 'text-gap-red font-bold hover:underline' 
+                                : 'text-gray-600 hover:text-gap-navy hover:underline'
+                            }`}
+                          >
+                            {item}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+
+                {/* 4カラム目: カテゴリー */}
+                <div className="col-span-1 flex flex-col">
+                  <h3 className="text-[13px] font-bold text-gap-dark pb-4 mb-4 border-b border-gray-100 tracking-wide">
+                    {megaMenuData.categories.title}
+                  </h3>
+                  <ul className="space-y-4 text-[13px]">
+                    {megaMenuData.categories.items.map((item) => (
+                      <li key={item}>
+                        <Link 
+                          href="/products" 
+                          className="text-gray-600 hover:text-gap-navy hover:underline transition-colors block py-0.5"
+                        >
+                          {item}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* 5カラム目: アクセサリー */}
+                <div className="col-span-1 flex flex-col">
+                  <h3 className="text-[13px] font-bold text-gap-dark pb-4 mb-4 border-b border-gray-100 tracking-wide">
+                    {megaMenuData.accessories.title}
+                  </h3>
+                  <ul className="space-y-4 text-[13px]">
+                    {megaMenuData.accessories.items.map((item) => (
+                      <li key={item}>
+                        <Link 
+                          href="/products" 
+                          className="text-gray-600 hover:text-gap-navy hover:underline transition-colors block py-0.5"
+                        >
+                          {item}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* 6カラム目: コラボレーション */}
+                <div className="col-span-1 flex flex-col">
+                  <h3 className="text-[13px] font-bold text-gap-dark pb-4 mb-4 border-b border-gray-100 tracking-wide">
+                    {megaMenuData.collaborations.title}
+                  </h3>
+                  <ul className="space-y-4 text-[13px]">
+                    {megaMenuData.collaborations.items.map((item) => (
+                      <li key={item}>
+                        <Link 
+                          href="/products" 
+                          className="text-gray-600 hover:text-gap-navy hover:underline transition-colors block py-0.5 font-medium"
+                        >
+                          {item}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================
-         3. Announce Bar
+         4. Announce Bar (Main Barの下に常駐)
          ========================================================= */}
       <div className="bg-gap-navy text-white py-3 px-12 md:px-16 text-11 md:text-12 overflow-hidden">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
@@ -241,53 +443,204 @@ export default function Header02({ isHome = false }: HeaderProps) {
       </div>
 
       {/* =========================================================
-         4. Mobile Hamburger Drawer Menu
+         5. Mobile Hamburger Drawer Menu
          ========================================================= */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-[60px] bottom-0 bg-white z-50 flex flex-col justify-between overflow-y-auto animate-in fade-in duration-200">
-          <div className="p-20">
-            <p className="text-12 font-bold text-gap-muted mb-12 uppercase tracking-wider">カテゴリー</p>
-            <ul className="space-y-16">
-              {categories.map((cat) => (
-                <li key={cat}>
-                  <Link 
-                    href="#" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block text-20 font-bold text-gap-dark"
-                  >
-                    {cat}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+      <div 
+        onClick={closeMobileMenu}
+        className={`lg:hidden fixed inset-0 bg-black/60 z-50 transition-opacity duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+
+      <div 
+        className={`lg:hidden fixed top-0 right-0 bottom-0 w-[88%] max-w-[380px] bg-white z-50 flex flex-col font-sans select-none shadow-2xl transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        
+        {/* ドロワー最上部バー */}
+        <div className="h-[64px] px-[36px] flex items-center justify-between flex-shrink-0 pt-4">
+          <div>
+            {menuLevel === 2 && (
+              <button
+                onClick={() => setMenuLevel(1)}
+                className="flex items-center gap-4 text-[14px] font-bold text-gap-dark cursor-pointer py-4"
+              >
+                <ChevronLeft size={20} />
+                <span>すべて</span>
+              </button>
+            )}
+            {menuLevel === 3 && (
+              <button
+                onClick={() => setMenuLevel(2)}
+                className="flex items-center gap-4 text-[14px] font-bold text-gap-dark cursor-pointer py-4"
+              >
+                <ChevronLeft size={20} />
+                <span>{selectedCategory}</span>
+              </button>
+            )}
           </div>
 
-          <div className="bg-gap-gray p-20 border-t border-gap-border space-y-12">
-            <Link 
-              href="#" 
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="primary-btn w-full text-center block"
-            >
-              ログイン / 新規会員登録
-            </Link>
+          <button
+            onClick={closeMobileMenu}
+            className="flex items-center justify-center p-0 mr-[2px] text-gray-700 hover:text-black cursor-pointer ml-auto transition-colors"
+            aria-label="閉じる"
+          >
+            <X size={20} strokeWidth={2.2} />
+          </button>
+        </div>
 
-            <div className="grid grid-cols-2 gap-12 text-13 font-medium text-gap-dark pt-8">
-              <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-8 py-8 border-b border-gap-border">
-                <HelpCircle size={16} /> ヘルプ＆ガイド
-              </Link>
-              <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-8 py-8 border-b border-gap-border">
-                <ShoppingBag size={16} /> カート
-              </Link>
-              <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-8 py-8 border-b border-gap-border">
-                <Package size={16} /> 注文履歴
-              </Link>
-              <Link href="#" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-8 py-8 border-b border-gap-border">
-                <MapPin size={16} /> 店舗検索
-              </Link>
+        {/* 300%幅スライダーコンテナ */}
+        <div className="flex-1 overflow-hidden relative">
+          <div 
+            className="flex w-[300%] h-full transition-transform duration-300 ease-in-out"
+            style={{
+              transform: `translateX(-${(menuLevel - 1) * (100 / 3)}%)`
+            }}
+          >
+
+            {/* LEVEL 1: トップレベル */}
+            <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
+              
+              <div className="space-y-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setMenuLevel(2);
+                    }}
+                    className="w-full flex items-center justify-between py-6 text-[18px] font-bold text-gap-dark hover:text-gap-navy cursor-pointer text-left"
+                  >
+                    <span>{cat}</span>
+                    <ChevronRight size={18} className="text-gray-400 stroke-[2.2]" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-16 border-t border-gray-100 my-12">
+                <p className="text-[13px] text-gray-600 mb-12 leading-relaxed font-medium">
+                  最新のコレクションや会員限定のオファーをお届けします。
+                </p>
+                <div className="flex items-center gap-10">
+                  <button 
+                    onClick={closeMobileMenu}
+                    className="flex-1 h-[44px] bg-gap-navy text-white rounded-full font-bold text-[13px] hover:bg-[#001b3d] transition-colors shadow-sm cursor-pointer"
+                  >
+                    登録する
+                  </button>
+                  <button 
+                    onClick={closeMobileMenu}
+                    className="flex-1 h-[44px] border border-gray-300 rounded-full font-bold text-[13px] text-black hover:border-black transition-colors cursor-pointer"
+                  >
+                    ログイン
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-12 border-t border-gray-100 pb-8 space-y-10">
+                <Link
+                  href="#"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-10 text-[13px] font-bold text-gray-700 hover:text-black transition-colors"
+                >
+                  <HelpCircle size={17} className="text-gray-500" />
+                  <span>ヘルプ</span>
+                </Link>
+
+                <Link
+                  href="#"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-10 text-[13px] font-bold text-gray-700 hover:text-black transition-colors"
+                >
+                  <ShoppingBag size={17} className="text-gray-500" />
+                  <span>カート</span>
+                </Link>
+
+                <Link
+                  href="#"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-10 text-[13px] font-bold text-gray-700 hover:text-black transition-colors"
+                >
+                  <MapPin size={17} className="text-gray-500" />
+                  <span>店舗検索</span>
+                </Link>
+              </div>
+
             </div>
+
+            {/* LEVEL 2: 中カテゴリー */}
+            <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
+              <div>
+                <h2 className="text-[22px] font-bold text-gap-dark mb-12">
+                  {selectedCategory}
+                </h2>
+
+                <div className="space-y-1">
+                  {subCategoryList.map((sub) => (
+                    <button
+                      key={sub.title}
+                      onClick={() => {
+                        setSelectedSubCategory(sub.title);
+                        setMenuLevel(3);
+                      }}
+                      className="w-full flex items-center justify-between py-7 text-[15px] font-bold text-gray-800 hover:text-black cursor-pointer text-left border-b border-gray-50"
+                    >
+                      <span>{sub.title}</span>
+                      <ChevronRight size={18} className="text-gray-400 stroke-[2.2]" />
+                    </button>
+                  ))}
+
+                  <Link
+                    href="/products"
+                    onClick={closeMobileMenu}
+                    className="block py-10 text-[13px] font-bold text-gap-navy underline pt-12"
+                  >
+                    すべての{selectedCategory}商品を見る
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* LEVEL 3: 最下層リンク一覧 */}
+            <div className="w-1/3 h-full overflow-y-auto flex flex-col justify-between px-[36px] pb-24 pt-4">
+              <div>
+                <h2 className="text-[22px] font-bold text-gap-dark mb-12">
+                  {selectedSubCategory}
+                </h2>
+
+                <div className="space-y-0.5">
+                  <Link
+                    href="/products"
+                    onClick={closeMobileMenu}
+                    className="block py-6 text-[13px] font-bold text-gap-navy underline mb-4"
+                  >
+                    すべての商品を見る
+                  </Link>
+
+                  {currentSubCategoryObj.items.map((item) => {
+                    const isSale = item === 'セール';
+                    return (
+                      <Link
+                        key={item}
+                        href="/products"
+                        onClick={closeMobileMenu}
+                        className={`block py-6 text-[14px] font-normal transition-colors border-b border-gray-50 ${
+                          isSale ? 'text-gap-red font-bold' : 'text-gray-700 hover:text-black'
+                        }`}
+                      >
+                        {item}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-      )}
+
+      </div>
     </>
   );
 }

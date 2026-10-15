@@ -1,12 +1,15 @@
-// components/Footer.tsx
+// components/Footer02.tsx
 'use client';
 
 import Link from 'next/link';
 
-export default function Footer() {
+export default function Footer02() {
   return (
-    <footer className="w-full bg-white text-gap-dark pt-16 md:pt-24 pb-16 font-sans overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-16 lg:px-24">
+    <footer className="w-full bg-white text-gap-dark pt-16 md:pt-24 font-sans overflow-hidden">
+      {/* =========================================================
+         メインコンテンツエリア (エリア1 & エリア2)
+         ========================================================= */}
+      <div className="max-w-[1600px] mx-auto px-16 lg:px-24 pb-20 md:pb-28">
         
         {/* =========================================================
            1. エリア1 : 2カラム構成
@@ -93,7 +96,7 @@ export default function Footer() {
         {/* =========================================================
            2. エリア2 : 4カラム メニュー ＆ SNSアイコン
            ========================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-24 py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-24 py-16 border-t border-gap-border">
           
           <div>
             <h4 className="text-15 font-bold mb-10 text-gap-dark">ご利用ガイド</h4>
@@ -166,19 +169,42 @@ export default function Footer() {
 
         </div>
 
-        {/* =========================================================
-           3. エリア3 : Copyright ＆ Legal Links
-           ========================================================= */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-12 text-11 text-gap-muted text-center md:text-left">
-          <p>©2026 The Gap, Inc. All rights reserved.</p>
-          
-          <div className="flex flex-wrap items-center justify-center gap-12 lg:gap-20">
-            <Link href="#" className="hover:underline">利用規約</Link>
-            <Link href="#" className="hover:underline">プライバシーポリシー</Link>
-            <Link href="#" className="hover:underline">特定商取引法・古物営業法に基づく表示案内</Link>
-          </div>
-        </div>
+      </div>
 
+      {/* =========================================================
+         3. エリア3 : Copyright ＆ Legal Links (GAP NAVY背景)
+         モバイル時: リンクを縦並び・左寄せで先に表示(order-1)、下にCopyrightを表示(order-2)
+         PC時(md:): 横並び・両端配置
+         ========================================================= */}
+      <div className="w-full bg-gap-navy text-white py-8 px-16 lg:px-24">
+        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-12 md:gap-12 text-11 text-left">
+          
+          {/* テキストリンク群 (モバイル: 1列に1つずつ縦並び左寄せ、PC: 横並び) */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-10 md:gap-12 lg:gap-20 order-1 md:order-2 w-full md:w-auto">
+            <Link 
+              href="#" 
+              className="!text-white hover:underline transition-all"
+            >
+              利用規約
+            </Link>
+            <Link 
+              href="#" 
+              className="!text-white hover:underline transition-all"
+            >
+              プライバシーポリシー
+            </Link>
+            <Link 
+              href="#" 
+              className="!text-white hover:underline transition-all"
+            >
+              特定商取引法・古物営業法に基づく表示案内
+            </Link>
+          </div>
+
+          {/* Copyright (モバイル: リンクの下に配置、PC: 左側に配置) */}
+          <p className="!text-white font-normal order-2 md:order-1">©2026 The Gap, Inc. All rights reserved.</p>
+
+        </div>
       </div>
     </footer>
   );
