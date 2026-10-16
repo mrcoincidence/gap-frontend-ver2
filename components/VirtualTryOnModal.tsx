@@ -13,11 +13,11 @@ import {
   ShoppingBag, 
   Copy, 
   Sparkles, 
-  ChevronRight,
-  ArrowLeft,
-  CheckCircle2,
-  RefreshCw,
-  AlertCircle
+  ChevronRight, 
+  ArrowLeft, 
+  CheckCircle2, 
+  RefreshCw, 
+  AlertCircle 
 } from 'lucide-react';
 
 export interface TryOnProductColor {
@@ -67,11 +67,13 @@ export default function VirtualTryOnModal({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
+  // カメラの前面(user) / 背面(environment)の切り替えステート
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+
   // 実際のAI生成画像URL & 生成エラー
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // デスクトップ用とモバイル用で別々のVideo Refを用意して競合を防止
   const desktopVideoRef = useRef<HTMLVideoElement | null>(null);
   const mobileVideoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -102,7 +104,6 @@ export default function VirtualTryOnModal({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // カメラ停止処理
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -111,7 +112,6 @@ export default function VirtualTryOnModal({
     setStream(null);
   };
 
-  // ビデオ要素にストリームを確実にバインドして再生
   const attachStreamToVideos = (mediaStream: MediaStream) => {
     const videos = [desktopVideoRef.current, mobileVideoRef.current];
     videos.forEach((video) => {
@@ -125,7 +125,6 @@ export default function VirtualTryOnModal({
     });
   };
 
-  // モーダル開閉時の初期化
   useEffect(() => {
     if (isOpen) {
       setStep('color');
@@ -138,6 +137,7 @@ export default function VirtualTryOnModal({
       setProgress(0);
       setIsShareOpen(false);
       setIsCopied(false);
+      setFacingMode('user');
       document.body.style.overflow = 'hidden';
     } else {
       stopCamera();
@@ -150,17 +150,17 @@ export default function VirtualTryOnModal({
     };
   }, [isOpen, initialColorIndex]);
 
-  // step === 'camera' に切り替わったタイミングでカメラを起動
   useEffect(() => {
     if (step === 'camera') {
       let isMounted = true;
       setCameraError(null);
 
       const initCamera = async () => {
+        stopCamera();
         try {
           const constraints: MediaStreamConstraints = {
             video: {
-              facingMode: 'user',
+              facingMode: { ideal: facingMode },
               width: { ideal: 1280 },
               height: { ideal: 720 },
             },
@@ -191,16 +191,18 @@ export default function VirtualTryOnModal({
     } else {
       stopCamera();
     }
-  }, [step]);
+  }, [step, facingMode]);
 
-  // ストリーム取得後に両方の要素へ再同期
   useEffect(() => {
     if (stream && step === 'camera') {
       attachStreamToVideos(stream);
     }
   }, [stream, step]);
 
-  // 撮影実行
+  const toggleCameraFacing = () => {
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+  };
+
   const executeCapture = () => {
     const video = isMobile ? (mobileVideoRef.current || desktopVideoRef.current) : (desktopVideoRef.current || mobileVideoRef.current);
     if (video && canvasRef.current) {
@@ -209,7 +211,15 @@ export default function VirtualTryOnModal({
       canvas.height = video.videoHeight || 480;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (facingMode === 'user') {
+          ctx.save();
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        } else {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedImage(dataUrl);
         stopCamera();
@@ -251,7 +261,6 @@ export default function VirtualTryOnModal({
 
   const currentColor = product.colors[selectedColorIdx] || product.colors[0];
 
-  // 実際のAI試着生成リクエストの実行
   const startGeneratingTryOn = async () => {
     const userImg = capturedImage || uploadedImage;
     if (!userImg) return;
@@ -342,17 +351,14 @@ export default function VirtualTryOnModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-[48px] bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       
-      {/* 隠しCanvas (撮影用) */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* モーダル本体 */}
       <div className="relative w-full h-full md:max-w-[700px] bg-white rounded-none md:rounded-[4px] shadow-2xl flex flex-col justify-between overflow-y-auto md:overflow-hidden p-16 md:p-[48px] select-none">
         
         {/* =========================================================
-           1. ヘッダーバー (垂直中央一直線)
+           1. ヘッダーバー
            ========================================================= */}
         <div className="w-full h-[40px] flex items-center justify-between flex-shrink-0">
-          
           <div className="w-[40px] flex items-center justify-start">
             {step !== 'color' && step !== 'generating' && step !== 'result' && (
               <button
@@ -446,7 +452,6 @@ export default function VirtualTryOnModal({
               <X size={20} />
             </button>
           </div>
-
         </div>
 
         {/* =========================================================
@@ -454,13 +459,10 @@ export default function VirtualTryOnModal({
            ========================================================= */}
         <div className="flex-1 flex flex-col justify-center items-center w-full min-h-0 my-auto py-8 md:py-0">
 
-          {/* -------------------------------------------------------
-             STEP 1: カラー選択 (置き画を枠いっぱいに大きく表示)
-             ------------------------------------------------------- */}
+          {/* STEP 1: カラー選択 */}
           {step === 'color' && (
             <div className="w-full">
-              
-              {/* デスクトップ表示 */}
+              {/* デスクトップ */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
                 <div className="w-[240px] h-[360px] bg-[#f8f8f8] rounded-[2px] overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center flex-shrink-0">
                   <img
@@ -521,15 +523,15 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 */}
-              <div className="flex md:hidden flex-col items-center justify-between w-full h-full max-w-[320px] mx-auto text-center">
+              {/* モバイル (320x480) */}
+              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[340px] mx-auto text-center py-4">
                 <div className="mb-8">
                   <h3 className="text-[17px] font-bold text-gap-dark">
                     試着するカラーを選択
                   </h3>
                 </div>
 
-                <div className="w-[200px] h-[300px] bg-[#f8f8f8] rounded-[2px] overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center flex-shrink-0 mb-12">
+                <div className="w-[320px] h-[480px] bg-[#f8f8f8] rounded-[4px] overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center flex-shrink-0 mb-12">
                   <img
                     src={currentColor.images[0]}
                     alt={currentColor.name}
@@ -542,7 +544,7 @@ export default function VirtualTryOnModal({
                     <button
                       key={c.id}
                       onClick={() => setSelectedColorIdx(idx)}
-                      className={`relative w-[46px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer bg-[#f8f8f8] flex items-center justify-center ${
+                      className={`relative w-[48px] aspect-[4/5] rounded-[2px] overflow-hidden border-2 transition-all cursor-pointer bg-[#f8f8f8] flex items-center justify-center ${
                         selectedColorIdx === idx
                           ? 'border-gap-navy scale-105 shadow-sm'
                           : 'border-transparent opacity-60'
@@ -555,19 +557,16 @@ export default function VirtualTryOnModal({
 
                 <button
                   onClick={() => setStep('camera')}
-                  className="w-full h-[46px] bg-gap-navy text-white rounded-full font-bold text-[14px] hover:bg-[#001b3d] transition-colors flex items-center justify-center gap-6 shadow-sm cursor-pointer"
+                  className="w-[320px] h-[46px] bg-gap-navy text-white rounded-full font-bold text-[14px] hover:bg-[#001b3d] transition-colors flex items-center justify-center gap-6 shadow-sm cursor-pointer"
                 >
                   <span>撮影する</span>
                   <ChevronRight size={16} />
                 </button>
               </div>
-
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 2: 写真準備方法の選択 (デスクトップ)
-             ------------------------------------------------------- */}
+          {/* STEP 2: 写真準備方法の選択 */}
           {step === 'source' && (
             <div className="flex flex-col items-center justify-between w-full h-[360px] text-center">
               <div>
@@ -613,13 +612,10 @@ export default function VirtualTryOnModal({
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 3-A: カメラ撮影 (desktopVideoRef / mobileVideoRef)
-             ------------------------------------------------------- */}
+          {/* STEP 3-A: カメラ撮影 (はみ出し防止: scale-[1.10] / p-10) */}
           {step === 'camera' && (
             <div className="w-full">
-              
-              {/* デスクトップ表示 */}
+              {/* デスクトップ */}
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
                 <div className="relative w-[240px] h-[360px] bg-black rounded-[4px] overflow-hidden flex items-center justify-center shadow-inner flex-shrink-0">
                   <video
@@ -630,22 +626,27 @@ export default function VirtualTryOnModal({
                     onLoadedMetadata={(e) => {
                       e.currentTarget.play().catch(() => {});
                     }}
-                    className="w-full h-full object-cover transform -scale-x-100"
+                    className={`w-full h-full object-cover ${facingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                   />
 
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    {guideType === 'upper' ? (
-                      <svg viewBox="0 0 180 270" className="w-[78%] h-[85%] text-white/70">
-                        <ellipse cx="90" cy="55" rx="28" ry="36" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M35 150 C55 115, 75 112, 90 112 C105 112, 125 115, 145 150 L135 270 L45 270 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 180 270" className="w-[62%] h-[92%] text-white/70">
-                        <ellipse cx="90" cy="36" rx="16" ry="20" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M58 85 C70 70, 80 68, 90 68 C100 68, 110 70, 122 85 L114 165 L66 165 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M72 165 L70 265 M108 165 L110 265" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                      </svg>
-                    )}
+                  {/* カメラ切り替えボタン */}
+                  <button
+                    type="button"
+                    onClick={toggleCameraFacing}
+                    className="absolute top-10 right-10 z-20 w-[36px] h-[36px] rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-sm border border-white/20 transition-all cursor-pointer shadow-md active:scale-95"
+                    aria-label="カメラ切り替え"
+                    title={facingMode === 'user' ? '背面カメラに切り替え' : '前面カメラに切り替え'}
+                  >
+                    <RefreshCw size={17} />
+                  </button>
+
+                  {/* 微調整したSVG撮影ガイド (デスクトップ) */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-10 overflow-hidden">
+                    <img
+                      src={guideType === 'upper' ? '/images/virtual-try-on/guide-upper.svg' : '/images/virtual-try-on/guide-whole.svg'}
+                      alt="撮影ガイド"
+                      className="w-full h-full object-contain brightness-0 invert opacity-80 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] scale-[1.10] transform transition-transform duration-200"
+                    />
                   </div>
 
                   {countdown !== null && countdown > 0 && (
@@ -713,15 +714,15 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 */}
-              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
+              {/* モバイル (320x480 + scale-[1.10]) */}
+              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[340px] mx-auto text-center py-4">
                 <div className="mb-8">
                   <h3 className="text-[17px] font-bold text-gap-dark">
                     ガイドに合わせて撮影
                   </h3>
                 </div>
 
-                <div className="relative w-[200px] h-[300px] bg-black rounded-[4px] overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 mb-12">
+                <div className="relative w-[320px] h-[480px] bg-black rounded-[4px] overflow-hidden flex items-center justify-center shadow-md flex-shrink-0 mb-12">
                   <video
                     ref={mobileVideoRef}
                     autoPlay
@@ -730,34 +731,51 @@ export default function VirtualTryOnModal({
                     onLoadedMetadata={(e) => {
                       e.currentTarget.play().catch(() => {});
                     }}
-                    className="w-full h-full object-cover transform -scale-x-100"
+                    className={`w-full h-full object-cover ${facingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                   />
 
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    {guideType === 'upper' ? (
-                      <svg viewBox="0 0 180 270" className="w-[78%] h-[85%] text-white/70">
-                        <ellipse cx="90" cy="55" rx="28" ry="36" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M35 150 C55 115, 75 112, 90 112 C105 112, 125 115, 145 150 L135 270 L45 270 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 180 270" className="w-[62%] h-[92%] text-white/70">
-                        <ellipse cx="90" cy="36" rx="16" ry="20" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M58 85 C70 70, 80 68, 90 68 C100 68, 110 70, 122 85 L114 165 L66 165 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <path d="M72 165 L70 265 M108 165 L110 265" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                      </svg>
-                    )}
+                  {/* カメラ切り替えボタン */}
+                  <button
+                    type="button"
+                    onClick={toggleCameraFacing}
+                    className="absolute top-12 right-12 z-20 w-[42px] h-[42px] rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-lg active:scale-90"
+                    aria-label="カメラ切り替え"
+                    title={facingMode === 'user' ? '背面カメラに切り替え' : '前面カメラに切り替え'}
+                  >
+                    <RefreshCw size={20} />
+                  </button>
+
+                  {/* 微調整したSVG撮影ガイド (モバイル 320x480) */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-10 overflow-hidden">
+                    <img
+                      src={guideType === 'upper' ? '/images/virtual-try-on/guide-upper.svg' : '/images/virtual-try-on/guide-whole.svg'}
+                      alt="撮影ガイド"
+                      className="w-full h-full object-contain brightness-0 invert opacity-80 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] scale-[1.10] transform transition-transform duration-200"
+                    />
                   </div>
 
                   {countdown !== null && countdown > 0 && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30 animate-in zoom-in-75 duration-200">
-                      <span className="text-[64px] font-black text-white drop-shadow-2xl animate-pulse">
+                      <span className="text-[72px] font-black text-white drop-shadow-2xl animate-pulse">
                         {countdown}
                       </span>
                     </div>
                   )}
+
+                  {cameraError && (
+                    <div className="absolute inset-0 bg-black/90 p-16 text-white text-center flex flex-col items-center justify-center z-40">
+                      <p className="text-[13px] text-red-300 mb-10">{cameraError}</p>
+                      <button
+                        onClick={() => setStep('upload')}
+                        className="px-16 py-8 bg-white text-black text-[12px] font-bold rounded-full cursor-pointer"
+                      >
+                        アップロードへ切り替え
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div className="w-[260px] h-[40px] bg-gray-100 p-2 rounded-full flex items-center select-none mb-12">
+                <div className="w-[320px] h-[40px] bg-gray-100 p-2 rounded-full flex items-center select-none mb-12">
                   <button
                     onClick={() => setGuideType('upper')}
                     className={`flex-1 h-full rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center ${
@@ -779,19 +797,16 @@ export default function VirtualTryOnModal({
                 <button
                   onClick={handleStartCountdown}
                   disabled={countdown !== null || !!cameraError}
-                  className="w-[260px] h-[46px] bg-gap-navy text-white rounded-full font-bold text-[13px] hover:bg-[#001b3d] transition-all flex items-center justify-center gap-8 shadow-sm cursor-pointer disabled:opacity-50"
+                  className="w-[320px] h-[46px] bg-gap-navy text-white rounded-full font-bold text-[13px] hover:bg-[#001b3d] transition-all flex items-center justify-center gap-8 shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   <Camera size={18} />
                   <span>{countdown !== null ? `撮影中... (${countdown})` : '撮影する (3秒タイマー)'}</span>
                 </button>
               </div>
-
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 3-A PREVIEW: 撮影確認
-             ------------------------------------------------------- */}
+          {/* STEP 3-A PREVIEW: 撮影確認 */}
           {step === 'camera-preview' && capturedImage && (
             <div className="w-full">
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
@@ -832,16 +847,16 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
+              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[340px] mx-auto text-center py-4">
                 <h3 className="text-[17px] font-bold text-gap-dark mb-10">
                   この写真で試着しますか？
                 </h3>
 
-                <div className="w-[200px] h-[300px] bg-black rounded-[4px] overflow-hidden shadow-md mb-16">
+                <div className="w-[320px] h-[480px] bg-black rounded-[4px] overflow-hidden shadow-md mb-16">
                   <img src={capturedImage} alt="撮影プレビュー" className="w-full h-full object-cover" />
                 </div>
 
-                <div className="flex items-center gap-10 w-[260px]">
+                <div className="flex items-center gap-10 w-[320px]">
                   <button
                     onClick={() => {
                       setStep('camera');
@@ -863,9 +878,7 @@ export default function VirtualTryOnModal({
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 3-B: 写真アップロード
-             ------------------------------------------------------- */}
+          {/* STEP 3-B: 写真アップロード */}
           {step === 'upload' && (
             <div className="flex flex-col items-center justify-between w-full h-[360px] text-center">
               <div>
@@ -899,9 +912,7 @@ export default function VirtualTryOnModal({
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 3-B PREVIEW: アップロード確認
-             ------------------------------------------------------- */}
+          {/* STEP 3-B PREVIEW: アップロード確認 */}
           {step === 'upload-preview' && uploadedImage && (
             <div className="flex items-start justify-center gap-24 w-full h-[360px]">
               <div className="w-[240px] h-[360px] bg-black rounded-[4px] overflow-hidden shadow-md flex-shrink-0">
@@ -940,9 +951,7 @@ export default function VirtualTryOnModal({
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 4: 画像生成中
-             ------------------------------------------------------- */}
+          {/* STEP 4: 画像生成中 */}
           {step === 'generating' && (
             <div className="w-full">
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px]">
@@ -1011,8 +1020,8 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 */}
-              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
+              {/* モバイル (320x480) */}
+              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[340px] mx-auto text-center py-4">
                 <div className="flex items-center gap-6 mb-8">
                   <Sparkles size={16} className="text-gap-navy animate-spin flex-shrink-0" />
                   <h3 className="text-[15px] font-bold text-gap-dark">
@@ -1020,7 +1029,7 @@ export default function VirtualTryOnModal({
                   </h3>
                 </div>
 
-                <div className="relative w-[200px] h-[300px] rounded-[4px] overflow-hidden shadow-md bg-gray-100 flex-shrink-0 mb-14">
+                <div className="relative w-[320px] h-[480px] rounded-[4px] overflow-hidden shadow-md bg-gray-100 flex-shrink-0 mb-14">
                   {stylingSlides.map((slide, idx) => (
                     <div
                       key={idx}
@@ -1040,7 +1049,7 @@ export default function VirtualTryOnModal({
                   ))}
                 </div>
 
-                <div className="w-[240px]">
+                <div className="w-[320px]">
                   <div className="w-full h-[5px] bg-gray-200 rounded-full overflow-hidden mb-6">
                     <div
                       className="h-full bg-gap-navy transition-all duration-300 ease-out"
@@ -1067,9 +1076,7 @@ export default function VirtualTryOnModal({
             </div>
           )}
 
-          {/* -------------------------------------------------------
-             STEP 5: 生成完了画面
-             ------------------------------------------------------- */}
+          {/* STEP 5: 生成完了画面 */}
           {step === 'result' && (
             <div className="w-full">
               <div className="hidden md:flex items-start justify-center gap-24 w-full h-[360px] text-left">
@@ -1186,8 +1193,8 @@ export default function VirtualTryOnModal({
                 </div>
               </div>
 
-              {/* モバイル表示 */}
-              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[320px] mx-auto text-center">
+              {/* モバイル (320x480) */}
+              <div className="flex md:hidden flex-col items-center justify-between w-full max-w-[340px] mx-auto text-center py-4">
                 <div className="mb-6">
                   <h3 className="text-[17px] font-bold text-gap-dark">
                     試着プレビュー結果
@@ -1198,7 +1205,7 @@ export default function VirtualTryOnModal({
                   </div>
                 </div>
 
-                <div className="relative w-[200px] h-[300px] rounded-[3px] overflow-hidden shadow-xl border border-gray-200 bg-gray-50 flex-shrink-0 mb-14">
+                <div className="relative w-[320px] h-[480px] rounded-[3px] overflow-hidden shadow-xl border border-gray-200 bg-gray-50 flex-shrink-0 mb-14">
                   <img
                     src={generatedImageUrl || '/images/virtual-try-on/result-demo.jpg'}
                     alt="試着結果"
@@ -1206,7 +1213,7 @@ export default function VirtualTryOnModal({
                   />
                 </div>
 
-                <div className="w-[260px]">
+                <div className="w-[320px]">
                   <button
                     onClick={() => {
                       onClose();
@@ -1288,7 +1295,6 @@ export default function VirtualTryOnModal({
                   </div>
                 </div>
               </div>
-
             </div>
           )}
 
