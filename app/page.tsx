@@ -186,7 +186,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2. Sub Hero section (MEN'S MODERN DENIM CTAボタンからPLPへ遷移) */}
+        {/* 2. Sub Hero section */}
         <section className="w-full grid grid-cols-1 md:grid-cols-2">
           <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-[24px] lg:px-24 pb-24 md:pb-32">
             <video 
@@ -215,6 +215,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* 右側: Hoodie Day キャンペーンへの導線 */}
           <div className="relative h-[80vh] md:h-[calc(100vh-100px)] min-h-[450px] bg-black overflow-hidden flex items-end px-[24px] lg:px-24 pb-24 md:pb-32">
             <video 
               autoPlay 
@@ -229,14 +230,14 @@ export default function Home() {
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10 text-white">
-              <h2 className="text-28 md:text-35 font-bold mb-8">MEN'S MODERN DENIM</h2>
-              <p className="text-14 md:text-16 mb-12 opacity-90">上質なファブリックと多様なシルエットのメンズデニム</p>
+              <h2 className="text-28 md:text-35 font-bold mb-8">OUR HOODIE. YOUR CANVAS.</h2>
+              <p className="text-14 md:text-16 mb-12 opacity-90">1着のフーディーから始まる、5つの新しいストーリー</p>
               <div>
                 <Link 
-                  href="/products" 
+                  href="/hoodie-day" 
                   className="inline-block bg-white text-gap-navy border-2 border-white font-bold text-14 px-16 py-6 transition-all duration-300 hover:bg-transparent hover:text-white uppercase tracking-wider"
                 >
-                  メンズをショップ
+                  キャンペーンを見る
                 </Link>
               </div>
             </div>
@@ -348,7 +349,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. SEO & Navigation List Section (各カテゴリーアイコンからPLPへ遷移) */}
+        {/* 5. SEO & Navigation List Section */}
         <section className="bg-white pt-[100px] pb-48 md:pb-64">
           <div className="max-w-[1200px] mx-auto px-[24px] lg:px-24">
             <div className="text-center mb-20 md:mb-28">
@@ -361,7 +362,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 6つのカテゴリーアイコン全てに /products への導線を設定 */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-16 md:gap-24 mb-24 md:mb-32 text-center">
               {essentialCategories.map((cat, idx) => (
                 <Link 

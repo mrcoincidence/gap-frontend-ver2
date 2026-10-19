@@ -80,6 +80,7 @@ const hoodieList = [
   },
 ];
 
+// デスクトップ用スタッガーモーション関数
 function getSmoothStaggerStyle(
   localP: number,
   startIn: number,
@@ -105,12 +106,87 @@ function getSmoothStaggerStyle(
   }
 }
 
+// 01〜05 モバイル用フェーズ1 (映像カード) スタイル計算
+function getMobileCardStyle(localP: number, isLast = false) {
+  const inStart = 0.00;
+  const inEnd = 0.10;
+  const outStart = isLast ? 0.28 : 0.40;
+  const outEnd = isLast ? 0.36 : 0.48;
+
+  if (localP < inStart) {
+    return { opacity: 0, transform: 'translateY(24px)' };
+  } else if (localP <= inEnd) {
+    const t = (localP - inStart) / (inEnd - inStart);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: ease, transform: `translateY(${(1 - ease) * 24}px)` };
+  } else if (localP < outStart) {
+    return { opacity: 1, transform: 'translateY(0px)' };
+  } else if (localP <= outEnd) {
+    const t = (localP - outStart) / (outEnd - outStart);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: Math.max(0, 1 - ease), transform: `translateY(-${ease * 24}px)` };
+  } else {
+    return { opacity: 0, transform: 'translateY(-24px)' };
+  }
+}
+
+// 01〜05 モバイル用フェーズ2 (商品情報カラム) スタイル計算
+function getMobileInfoStyle(localP: number, isLast = false) {
+  const inStart = isLast ? 0.34 : 0.46;
+  const inEnd = isLast ? 0.42 : 0.54;
+  const outStart = isLast ? 0.99 : 0.84;
+  const outEnd = isLast ? 1.05 : 0.94;
+
+  if (localP < inStart) {
+    return { opacity: 0, transform: 'translateY(24px)' };
+  } else if (localP <= inEnd) {
+    const t = (localP - inStart) / (inEnd - inStart);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: ease, transform: `translateY(${(1 - ease) * 24}px)` };
+  } else if (localP < outStart) {
+    return { opacity: 1, transform: 'translateY(0px)' };
+  } else if (localP <= outEnd) {
+    const t = (localP - outStart) / (outEnd - outStart);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: Math.max(0, 1 - ease), transform: `translateY(-${ease * 24}px)` };
+  } else {
+    return { opacity: 0, transform: 'translateY(-24px)' };
+  }
+}
+
+// All Collections モバイル用 1商品ずつ切り替えるスタイル計算
+function getMobileCollectionItemStyle(gp: number, itemIdx: number, total: number) {
+  // 7.55から各商品0.34刻みで表示
+  const start = 7.55 + itemIdx * 0.34;
+  const inEnd = start + 0.08;
+  const outStart = start + 0.26;
+  const outEnd = start + 0.34;
+  const isLast = itemIdx === total - 1;
+
+  if (gp < start) {
+    return { opacity: 0, transform: 'translateY(20px)', pointerEvents: 'none' as const, display: 'none' };
+  } else if (gp <= inEnd) {
+    const t = (gp - start) / (inEnd - start);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: ease, transform: `translateY(${(1 - ease) * 20}px)`, pointerEvents: 'auto' as const, display: 'flex' };
+  } else if (isLast || gp < outStart) {
+    return { opacity: 1, transform: 'translateY(0px)', pointerEvents: 'auto' as const, display: 'flex' };
+  } else if (gp <= outEnd) {
+    const t = (gp - outStart) / (outEnd - outStart);
+    const ease = t * t * (3 - 2 * t);
+    return { opacity: Math.max(0, 1 - ease), transform: `translateY(-${ease * 20}px)`, pointerEvents: 'none' as const, display: 'flex' };
+  } else {
+    return { opacity: 0, transform: 'translateY(-20px)', pointerEvents: 'none' as const, display: 'none' };
+  }
+}
+
 export default function HoodieCampaignPage() {
   const [globalProgress, setGlobalProgress] = useState(0);
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const TOTAL_GP = 9.4;
 
   useEffect(() => {
     let ticking = false;
@@ -125,7 +201,7 @@ export default function HoodieCampaignPage() {
             const currentScroll = -rect.top;
             
             const rawProgress = Math.max(0, Math.min(1, currentScroll / totalScroll));
-            const gp = rawProgress * 7.8;
+            const gp = rawProgress * TOTAL_GP;
             setGlobalProgress(gp);
 
             let active = 0;
@@ -155,7 +231,7 @@ export default function HoodieCampaignPage() {
     const totalScroll = containerRef.current.offsetHeight - windowHeight;
     
     const targets = [0.05, 1.45, 2.85, 4.25, 5.65, 6.75, 7.60];
-    const targetProgress = (targets[secIdx] || 0) / 7.8;
+    const targetProgress = (targets[secIdx] || 0) / TOTAL_GP;
     const targetScroll = containerRef.current.offsetTop + targetProgress * totalScroll;
     window.scrollTo({ top: targetScroll, behavior: 'smooth' });
   };
@@ -276,7 +352,7 @@ export default function HoodieCampaignPage() {
     return { opacity: 0, transform: 'scale(1)' };
   };
 
-  // 05 の覆いかぶさり ＆ 05→All Collections の3Dパース回転トランジション
+  // 05 背景覆いかぶさり ＆ All Collectionsへのパース回転トランジション
   const bg05InStart = 6.08;
   const bg05InEnd = 6.48;
 
@@ -331,6 +407,9 @@ export default function HoodieCampaignPage() {
     allCollectionStyle = { transform: 'none', opacity: 1, pointerEvents: 'auto' };
   }
 
+  // モバイル All Collections で現在表示中のアイテムIndex (0〜4)
+  const currentCollectionIdx = Math.min(4, Math.max(0, Math.floor((gp - 7.55) / 0.34)));
+
   return (
     <div className="bg-[#0b0c10] text-white selection:bg-white selection:text-black font-sans relative">
       
@@ -372,7 +451,7 @@ export default function HoodieCampaignPage() {
       {/* =========================================================
          メインスクロールコンテナ
          ========================================================= */}
-      <div ref={containerRef} className="relative w-full" style={{ height: '1600vh' }}>
+      <div ref={containerRef} className="relative w-full" style={{ height: '1900vh' }}>
         <div 
           className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center"
           style={{ perspective: '1200px' }}
@@ -491,11 +570,14 @@ export default function HoodieCampaignPage() {
               const btnStyle   = getSmoothStaggerStyle(localP, 0.16, 0.34, 0.60, 0.76, 45);
               const cardStyle  = getSmoothStaggerStyle(localP, 0.06, 0.28, 0.65, 0.83, 30);
 
+              const mCardStyle = getMobileCardStyle(localP, true);
+              const mInfoStyle = getMobileInfoStyle(localP, true);
+
               return (
                 <div className="relative z-10 w-full h-full flex items-center justify-center">
-                  <div className="max-w-[1440px] w-full mx-auto px-20 md:px-32 lg:px-48 flex flex-col md:flex-row items-center justify-between gap-16 lg:gap-32">
-                    
-                    {/* 左側: テキスト ＆ サムネイル ＆ CTA */}
+                  
+                  {/* デスクトップ表示 (md以上) */}
+                  <div className="hidden md:flex max-w-[1440px] w-full mx-auto px-20 md:px-32 lg:px-48 flex-col md:flex-row items-center justify-between gap-16 lg:gap-32">
                     <div className="w-full md:w-1/2 flex flex-col justify-center text-left">
                       <div className="flex items-center gap-10 mb-10 will-change-transform" style={labelStyle}>
                         <span className="text-12 font-mono tracking-widest text-white bg-black/50 backdrop-blur-md px-8 py-2 rounded border border-white/20">
@@ -515,14 +597,12 @@ export default function HoodieCampaignPage() {
                         </p>
                       </div>
 
-                      {/* リード文 */}
                       <div className="will-change-transform" style={leadStyle}>
                         <p className="text-[16px] text-white/95 leading-relaxed max-w-[480px] mb-20 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
                           {item.description}
                         </p>
                       </div>
 
-                      {/* サムネイル ＆ 価格 */}
                       <div className="flex items-center gap-20 mb-22 will-change-transform" style={thumbStyle}>
                         <div className="relative w-[140px] h-[210px] md:w-[200px] md:h-[300px] flex-shrink-0 flex items-center justify-center">
                           <img
@@ -544,7 +624,6 @@ export default function HoodieCampaignPage() {
                         </div>
                       </div>
 
-                      {/* CTAボタン: /products/hoodie-day/ へ更新 */}
                       <div className="flex items-center will-change-transform" style={btnStyle}>
                         <Link
                           href={`/products/hoodie-day/${item.id}`}
@@ -556,7 +635,6 @@ export default function HoodieCampaignPage() {
                       </div>
                     </div>
 
-                    {/* 右側: ビジュアル動画カード: /products/hoodie-day/ へ更新 */}
                     <div className="w-full md:w-1/2 flex items-center justify-center will-change-transform" style={cardStyle}>
                       <Link 
                         href={`/products/hoodie-day/${item.id}`} 
@@ -585,8 +663,122 @@ export default function HoodieCampaignPage() {
                         </div>
                       </Link>
                     </div>
+                  </div>
+
+                  {/* モバイル表示 (md未満) */}
+                  <div className="md:hidden absolute inset-0 flex items-center justify-center pointer-events-none">
+                    {/* フェーズ1: コンテンツ映像 */}
+                    <div 
+                      className="absolute inset-0 flex flex-col items-center justify-center px-20 will-change-transform"
+                      style={{
+                        ...mCardStyle,
+                        display: localP < -0.05 || localP > 0.38 ? 'none' : 'flex',
+                        pointerEvents: localP >= 0.06 && localP <= 0.30 ? 'auto' : 'none',
+                      }}
+                    >
+                      <div className="w-full max-w-[360px] flex flex-col items-center">
+                        <div className="flex items-center gap-8 mb-12">
+                          <span className="text-[11px] font-mono tracking-widest text-white bg-black/60 backdrop-blur-md px-8 py-2 rounded border border-white/20">
+                            CANVAS #{item.id}
+                          </span>
+                          <span className="text-[12px] tracking-wider text-gray-200 font-medium drop-shadow">
+                            {item.category}
+                          </span>
+                        </div>
+
+                        <Link 
+                          href={`/products/hoodie-day/${item.id}`} 
+                          className="group relative block w-full aspect-square rounded-[8px] overflow-hidden shadow-2xl border border-white/30 bg-black/40"
+                        >
+                          <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                          >
+                            <source src={item.cardVideo} type="video/mp4" />
+                          </video>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-60" />
+                          <div className="absolute bottom-16 left-16 right-16 flex items-center justify-between text-white">
+                            <div>
+                              <p className="text-[11px] font-mono tracking-widest text-white/80">STORY MOVIE</p>
+                              <p className="text-[15px] font-bold tracking-tight">{item.name}</p>
+                            </div>
+                            <div className="w-[36px] h-[36px] rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                              <ChevronRight size={18} />
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* フェーズ2: 商品情報 */}
+                    <div 
+                      className="absolute inset-0 flex flex-col items-center justify-center px-20 will-change-transform"
+                      style={{
+                        ...mInfoStyle,
+                        display: localP < 0.32 ? 'none' : 'flex',
+                        pointerEvents: localP >= 0.38 && localP <= 0.68 ? 'auto' : 'none',
+                      }}
+                    >
+                      <div className="w-full max-w-[360px] flex flex-col items-center text-center">
+                        <div className="flex items-center justify-center gap-8 mb-6">
+                          <span className="text-[11px] font-mono tracking-widest text-white bg-black/60 backdrop-blur-md px-8 py-2 rounded border border-white/20">
+                            CANVAS #{item.id}
+                          </span>
+                          <span className="text-[12px] tracking-wider text-gray-200 font-medium drop-shadow">
+                            {item.category}
+                          </span>
+                        </div>
+
+                        <div className="mb-8">
+                          <h2 className="text-[26px] font-black leading-tight tracking-tight uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                            {item.name}
+                          </h2>
+                          <p className="text-[13px] font-medium text-white/90 mt-1 drop-shadow">
+                            {item.location}
+                          </p>
+                        </div>
+
+                        <p className="text-[14px] text-white/95 leading-relaxed mb-14 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] line-clamp-3">
+                          {item.description}
+                        </p>
+
+                        <div className="flex items-center justify-center gap-16 mb-16">
+                          <div className="relative w-[110px] h-[155px] flex-shrink-0 flex items-center justify-center">
+                            <img
+                              src={item.thumbImage}
+                              alt={item.name}
+                              className="w-full h-full object-contain filter drop-shadow-[0_10px_24px_rgba(0,0,0,0.7)]"
+                              onError={(e) => {
+                                e.currentTarget.src = item.productImage;
+                              }}
+                            />
+                          </div>
+                          <div className="flex flex-col text-left justify-center">
+                            <span className="text-[10px] text-gray-300 font-mono tracking-widest">PRICE</span>
+                            <div className="flex items-baseline gap-4 mt-1">
+                              <span className="text-[26px] font-bold font-mono text-white drop-shadow">
+                                ¥{item.price.toLocaleString()}
+                              </span>
+                              <span className="text-[11px] text-gray-200 font-medium drop-shadow">税込</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Link
+                          href={`/products/hoodie-day/${item.id}`}
+                          className="group inline-flex items-center justify-center gap-8 bg-white text-black h-[44px] w-full max-w-[280px] rounded-full font-bold text-[14px] hover:bg-gray-200 transition-all cursor-pointer shadow-2xl active:scale-95"
+                        >
+                          <span>このCanvasの物語へ</span>
+                          <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                        </Link>
+                      </div>
+                    </div>
 
                   </div>
+
                 </div>
               );
             })()}
@@ -594,6 +786,7 @@ export default function HoodieCampaignPage() {
 
           {/* =========================================================
              SECTION 6: ALL COLLECTIONS
+             (PC: 横5カラム / モバイル: 1商品ずつ切り替え + 9:16背景画像)
              ========================================================= */}
           <div 
             className="absolute inset-0 z-[20] overflow-hidden will-change-transform flex flex-col justify-center"
@@ -602,17 +795,29 @@ export default function HoodieCampaignPage() {
               ...allCollectionStyle,
             }}
           >
-            {/* 背景写真 */}
+            {/* 1. 背景写真 (PC用 ＆ モバイル用9:16を切り替え) */}
             <div className="absolute inset-0 z-0 pointer-events-none">
+              {/* PC用背景 */}
               <img
                 src="/images/hoodie-day/collection-bg.jpg"
                 alt="All Collection Background"
-                className="w-full h-full object-cover filter brightness-100 contrast-100"
+                className="hidden md:block w-full h-full object-cover filter brightness-100 contrast-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/10" />
+              {/* モバイル用背景 (9:16) */}
+              <img
+                src="/images/hoodie-day/collection-bg-mobile.jpg"
+                alt="All Collection Background Mobile"
+                className="block md:hidden w-full h-full object-cover filter brightness-100 contrast-100"
+                onError={(e) => {
+                  // モバイル画像未配置時はPC用画像にフォールバック
+                  e.currentTarget.src = '/images/hoodie-day/collection-bg.jpg';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
             </div>
 
-            <div className="relative z-10 w-full max-w-[1760px] mx-auto px-16 sm:px-24 md:px-32 flex flex-col justify-center">
+            {/* 2. デスクトップ表示 (md以上): 既存の5カラム並び */}
+            <div className="hidden md:flex relative z-10 w-full max-w-[1760px] mx-auto px-16 sm:px-24 md:px-32 flex-col justify-center">
               <div className="text-center mb-24 md:mb-36">
                 <span className="text-[11px] md:text-[12px] font-mono tracking-[0.35em] uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   ALL COLLECTIONS
@@ -622,8 +827,7 @@ export default function HoodieCampaignPage() {
                 </h2>
               </div>
 
-              {/* 5カラム商品一覧: /products/hoodie-day/ へ更新 */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-16 md:gap-20 lg:gap-28 w-full items-start">
+              <div className="grid grid-cols-5 gap-20 lg:gap-28 w-full items-start">
                 {hoodieList.map((item) => (
                   <div key={item.id}>
                     <Link
@@ -656,6 +860,90 @@ export default function HoodieCampaignPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* 3. モバイル表示 (md未満): 1商品ずつ順次フェードイン・フェードアウト */}
+            <div className="md:hidden relative z-10 w-full h-full flex flex-col items-center justify-between py-28 px-20">
+              
+              {/* モバイル上部タイトル ＆ 進行インジケーター */}
+              <div className="text-center pt-8">
+                <div className="inline-flex items-center gap-6 bg-black/60 backdrop-blur-md px-10 py-3 rounded-full border border-white/20 mb-6">
+                  <span className="text-[10px] font-mono tracking-widest text-white uppercase">
+                    ALL COLLECTIONS
+                  </span>
+                  <span className="text-[10px] font-mono text-white/50">|</span>
+                  <span className="text-[10px] font-mono text-white font-bold">
+                    {currentCollectionIdx + 1} / 5
+                  </span>
+                </div>
+                <h2 className="text-[20px] font-black uppercase text-white tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
+                  あなたの1着を見つける
+                </h2>
+              </div>
+
+              {/* 1商品ずつ切り替わるフルサイズカード領域 */}
+              <div className="relative w-full max-w-[320px] h-[440px] flex items-center justify-center my-auto">
+                {hoodieList.map((item, idx) => {
+                  const itemStyle = getMobileCollectionItemStyle(gp, idx, hoodieList.length);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="absolute inset-0 flex flex-col items-center justify-center will-change-transform"
+                      style={itemStyle}
+                    >
+                      <Link
+                        href={`/products/hoodie-day/${item.id}`}
+                        className="group w-full flex flex-col items-center cursor-pointer select-none"
+                      >
+                        {/* 商品画像 (3/4比率) */}
+                        <div className="relative w-[210px] aspect-[3/4] overflow-hidden mb-12 bg-black/40 rounded-[6px] shadow-2xl border border-white/20 flex items-center justify-center">
+                          <img
+                            src={item.productImage}
+                            alt={item.name}
+                            className="w-full h-full object-cover block"
+                          />
+                          <span className="absolute top-10 left-10 text-[11px] font-mono tracking-widest text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] bg-black/60 px-6 py-2 rounded">
+                            #{item.id}
+                          </span>
+                        </div>
+
+                        {/* テキスト情報 */}
+                        <div className="text-center mb-12">
+                          <h3 className="text-[18px] font-black text-white uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                            {item.name}
+                          </h3>
+                          <p className="text-[12px] text-gray-200 mt-2 drop-shadow">
+                            {item.location}
+                          </p>
+                          <p className="text-[18px] font-mono font-bold text-white mt-4 drop-shadow">
+                            ¥{item.price.toLocaleString()} <span className="text-[11px] font-normal text-gray-300">税込</span>
+                          </p>
+                        </div>
+
+                        {/* CTAボタン */}
+                        <div className="inline-flex items-center gap-6 bg-white text-black h-[38px] px-20 rounded-full font-bold text-[12px] shadow-xl active:scale-95 transition-transform">
+                          <span>詳細を見る</span>
+                          <ArrowUpRight size={14} />
+                        </div>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* モバイル下部ドットインジケーター */}
+              <div className="flex items-center gap-8 pb-8">
+                {hoodieList.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-[4px] rounded-full transition-all duration-300 ${
+                      currentCollectionIdx === i ? 'w-20 bg-white' : 'w-6 bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
+
             </div>
           </div>
 
@@ -744,6 +1032,9 @@ export default function HoodieCampaignPage() {
             const btnStyle   = getSmoothStaggerStyle(localP, 0.16, 0.34, 0.70, 0.86, 45);
             const cardStyle  = getSmoothStaggerStyle(localP, 0.06, 0.28, 0.75, 0.93, 30);
 
+            const mCardStyle = getMobileCardStyle(localP, false);
+            const mInfoStyle = getMobileInfoStyle(localP, false);
+
             if (!isVisible) return null;
 
             const isEven = idx % 2 === 1;
@@ -752,13 +1043,14 @@ export default function HoodieCampaignPage() {
               <div 
                 key={item.id}
                 className="absolute inset-0 z-[25] flex items-center justify-center pointer-events-none"
-                style={{
-                  pointerEvents: localP >= 0.25 && localP <= 0.75 ? 'auto' : 'none',
-                }}
               >
-                <div className="relative z-10 max-w-[1440px] w-full mx-auto px-20 md:px-32 lg:px-48 flex flex-col md:flex-row items-center justify-between gap-16 lg:gap-32">
-                  
-                  {/* 左側: テキスト ＆ サムネイル ＆ CTA */}
+                {/* デスクトップ表示 (md以上) */}
+                <div 
+                  className="hidden md:flex relative z-10 max-w-[1440px] w-full mx-auto px-20 md:px-32 lg:px-48 flex-col md:flex-row items-center justify-between gap-16 lg:gap-32"
+                  style={{
+                    pointerEvents: localP >= 0.25 && localP <= 0.75 ? 'auto' : 'none',
+                  }}
+                >
                   <div 
                     className={`w-full md:w-1/2 flex flex-col justify-center text-left ${
                       isEven ? 'md:order-2 md:pl-8' : 'md:order-1 md:pr-8'
@@ -809,7 +1101,6 @@ export default function HoodieCampaignPage() {
                       </div>
                     </div>
 
-                    {/* CTAボタン: /products/hoodie-day/ へ更新 */}
                     <div className="flex items-center will-change-transform" style={btnStyle}>
                       <Link
                         href={`/products/hoodie-day/${item.id}`}
@@ -821,7 +1112,6 @@ export default function HoodieCampaignPage() {
                     </div>
                   </div>
 
-                  {/* 右側: ビジュアル動画カード: /products/hoodie-day/ へ更新 */}
                   <div 
                     className={`w-full md:w-1/2 flex items-center justify-center will-change-transform ${
                       isEven ? 'md:order-1' : 'md:order-2'
@@ -855,8 +1145,120 @@ export default function HoodieCampaignPage() {
                       </div>
                     </Link>
                   </div>
+                </div>
+
+                {/* モバイル表示 (md未満) */}
+                <div className="md:hidden absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div 
+                    className="absolute inset-0 flex flex-col items-center justify-center px-20 will-change-transform"
+                    style={{
+                      ...mCardStyle,
+                      display: localP < -0.05 || localP > 0.50 ? 'none' : 'flex',
+                      pointerEvents: localP >= 0.08 && localP <= 0.40 ? 'auto' : 'none',
+                    }}
+                  >
+                    <div className="w-full max-w-[360px] flex flex-col items-center">
+                      <div className="flex items-center gap-8 mb-12">
+                        <span className="text-[11px] font-mono tracking-widest text-white bg-black/60 backdrop-blur-md px-8 py-2 rounded border border-white/20">
+                          CANVAS #{item.id}
+                        </span>
+                        <span className="text-[12px] tracking-wider text-gray-200 font-medium drop-shadow">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      <Link 
+                        href={`/products/hoodie-day/${item.id}`} 
+                        className="group relative block w-full aspect-square rounded-[8px] overflow-hidden shadow-2xl border border-white/30 bg-black/40"
+                      >
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                        >
+                          <source src={item.cardVideo} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-60" />
+                        <div className="absolute bottom-16 left-16 right-16 flex items-center justify-between text-white">
+                          <div>
+                            <p className="text-[11px] font-mono tracking-widest text-white/80">STORY MOVIE</p>
+                            <p className="text-[15px] font-bold tracking-tight">{item.name}</p>
+                          </div>
+                          <div className="w-[36px] h-[36px] rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                            <ChevronRight size={18} />
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="absolute inset-0 flex flex-col items-center justify-center px-20 will-change-transform"
+                    style={{
+                      ...mInfoStyle,
+                      display: localP < 0.42 || localP > 1.00 ? 'none' : 'flex',
+                      pointerEvents: localP >= 0.50 && localP <= 0.88 ? 'auto' : 'none',
+                    }}
+                  >
+                    <div className="w-full max-w-[360px] flex flex-col items-center text-center">
+                      <div className="flex items-center justify-center gap-8 mb-6">
+                        <span className="text-[11px] font-mono tracking-widest text-white bg-black/60 backdrop-blur-md px-8 py-2 rounded border border-white/20">
+                          CANVAS #{item.id}
+                        </span>
+                        <span className="text-[12px] tracking-wider text-gray-200 font-medium drop-shadow">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      <div className="mb-8">
+                        <h2 className="text-[26px] font-black leading-tight tracking-tight uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                          {item.name}
+                        </h2>
+                        <p className="text-[13px] font-medium text-white/90 mt-1 drop-shadow">
+                          {item.location}
+                        </p>
+                      </div>
+
+                      <p className="text-[14px] text-white/95 leading-relaxed mb-14 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] line-clamp-3">
+                        {item.description}
+                      </p>
+
+                      <div className="flex items-center justify-center gap-16 mb-16">
+                        <div className="relative w-[110px] h-[155px] flex-shrink-0 flex items-center justify-center">
+                          <img
+                            src={item.thumbImage}
+                            alt={item.name}
+                            className="w-full h-full object-contain filter drop-shadow-[0_10px_24px_rgba(0,0,0,0.7)]"
+                            onError={(e) => {
+                              e.currentTarget.src = item.productImage;
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col text-left justify-center">
+                          <span className="text-[10px] text-gray-300 font-mono tracking-widest">PRICE</span>
+                          <div className="flex items-baseline gap-4 mt-1">
+                            <span className="text-[26px] font-bold font-mono text-white drop-shadow">
+                              ¥{item.price.toLocaleString()}
+                            </span>
+                            <span className="text-[11px] text-gray-200 font-medium drop-shadow">税込</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/products/hoodie-day/${item.id}`}
+                        className="group inline-flex items-center justify-center gap-8 bg-white text-black h-[44px] w-full max-w-[280px] rounded-full font-bold text-[14px] hover:bg-gray-200 transition-all cursor-pointer shadow-2xl active:scale-95"
+                      >
+                        <span>このCanvasの物語へ</span>
+                        <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                      </Link>
+                    </div>
+                  </div>
 
                 </div>
+
               </div>
             );
           })}
@@ -865,7 +1267,7 @@ export default function HoodieCampaignPage() {
           <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/10 z-30">
             <div 
               className="h-full bg-white transition-all duration-75"
-              style={{ width: `${Math.min(100, (gp / 7.8) * 100)}%` }}
+              style={{ width: `${Math.min(100, (gp / TOTAL_GP) * 100)}%` }}
             />
           </div>
 
